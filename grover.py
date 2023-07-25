@@ -1,6 +1,6 @@
 from collections import defaultdict
 import itertools
-from typing import List
+from typing import Dict, List
 
 import cvxpy as cp
 import numpy as np
@@ -33,16 +33,19 @@ def create_polynomial(variables, deg=2, coeff_tok='a', monomial=False):
     p = np.sum([coeffs[i] * p[i] for i in range(len(p))])
     return sym.poly(p, variables, domain=K)
 
-def convert_exprs(exprs: List[sym.Poly], symbols_to_convert: List[sym.Symbol]):
-    cvx_vars = [cp.Variable(name = c.name, complex=True) for c in symbols_to_convert]
-    coeff_var_dict = dict(zip(symbols_to_convert, cvx_vars))
+def symbols_to_cvx_var(symbols: List[sym.Symbol]):
+    cvx_vars = [cp.Variable(name = s.name, complex=True) for s in symbols]
+    symbol_var_dict = dict(zip(symbols, cvx_vars))
+    return symbol_var_dict
+
+def convert_exprs(exprs: List[sym.Poly], symbol_var_dict:Dict[sym.Symbol, cp.Variable]):
     def convert(expr):
         if isinstance(expr, sym.Add): return np.sum([convert(arg) for arg in expr.args])
         if isinstance(expr, sym.Mul): return np.prod([convert(arg) for arg in expr.args])
         if isinstance(expr, sym.Pow): return convert(expr.args[0])**convert(expr.args[1])
-        if coeff_var_dict.get(expr) is not None: return coeff_var_dict[expr]
+        if symbol_var_dict.get(expr) is not None: return symbol_var_dict[expr]
         return expr
-    return [convert(expr) for expr in exprs], cvx_vars
+    return [convert(expr) for expr in exprs]
 
 def convert_exprs_of_matrix(exprs: List[sym.Poly], matrix_to_convert:sym.MatrixSymbol):
     new_matrix = cp.Variable(matrix_to_convert.shape, name=matrix_to_convert.name)
@@ -53,9 +56,9 @@ def convert_exprs_of_matrix(exprs: List[sym.Poly], matrix_to_convert:sym.MatrixS
         return expr
     return [convert(expr) for expr in exprs]
 
-def PSD_constraint_generator(sym_polynomial, symbols, matrix_name='Q'):
+def PSD_constraint_generator(sym_polynomial, symbol_var_dict, matrix_name='Q'):
     # Convert sympy polynomial to cvx variables
-    cvx_coeffs, cvx_vars = convert_exprs(sym_polynomial.coeffs(), symbols)
+    cvx_coeffs = convert_exprs(sym_polynomial.coeffs(), symbol_var_dict)
     poly_monom_to_cvx = dict(zip(sym_polynomial.monoms(), cvx_coeffs))
     poly_monom_to_cvx = defaultdict(lambda: 0.0, poly_monom_to_cvx)
 
@@ -73,7 +76,7 @@ def PSD_constraint_generator(sym_polynomial, symbols, matrix_name='Q'):
 
     # Link matrix variables to polynomial variables
     constraints = [Q_monom_to_cvx[key] == poly_monom_to_cvx[key] for key in Q_monom_to_cvx]
-    return Q_CVX, constraints, cvx_vars
+    return Q_CVX, constraints
 
 # 0. Inputs, variable definitions and constants
 eps = 1
@@ -134,20 +137,24 @@ barrier = create_polynomial(variables, deg=2, coeff_tok='b')
 print("Barrier made")
 if verbose: print(barrier)
 
-# 3. Make arbitrary constraint
+# 3. Make arbitrary polynomials
 polys = {}
 for key in [INIT, UNSAFE, DIFF]:
     polys[key] = poly_eq[key](barrier, lams, g)
-print("Constraint made")
+print("Polynomials made")
 if verbose: print(polys)
-# Remove:
-unsafe_condition = polys[UNSAFE]
 
 lam_coeffs = {}
 for key in lams: lam_coeffs[key] = flatten([[next(iter(coeff.free_symbols)) for coeff in lam.coeffs()] for lam in lams[key]])
 
 barrier_coeffs = [next(iter(coeff.free_symbols)) for coeff in barrier.coeffs()]
 
+symbol_var_dict = {}
+for lam_symbols in lam_coeffs.values():
+    symbol_var_dict.update(symbols_to_cvx_var(lam_symbols))
+symbol_var_dict.update(symbols_to_cvx_var(barrier_coeffs))
+
+# Needed?
 symbols = {}
 symbols[UNSAFE] = lam_coeffs[UNSAFE] + barrier_coeffs
 symbols[INIT] = lam_coeffs[INIT] + barrier_coeffs
@@ -160,34 +167,33 @@ matrices = []
 print("Getting lam constraints...")
 for key in lams:
     for poly in lams[key]:
-        S_CVX, lam_constraints, cvx_vars = PSD_constraint_generator(poly, lam_coeffs[key])
+        S_CVX, lam_constraints = PSD_constraint_generator(poly, symbol_var_dict)
         matrices.append(S_CVX)
         constraints += lam_constraints
 print("lam constraints generated.")
 
 print("Generating polynomial constraints...")
-cvx_vars = []
 for key in polys:
-    Q_CVX, poly_constraint, constraint_cvx_vars = PSD_constraint_generator(polys[key], symbols[key])
+    Q_CVX, poly_constraint = PSD_constraint_generator(polys[key], symbol_var_dict)
     matrices.append(Q_CVX)
     constraints += poly_constraint
-    # TODO: make a list of cvxpy variables
-    # cvx_vars += filter(lambda c: c not in cvx_vars, constraint_cvx_vars)
+constraints += [M >> 0 for M in matrices]
 print("Poly constraints generated.")
 
 # 5. Solve using cvxpy
-constraints += [M >> 0 for M in matrices]
-if verbose: print(constraints)
 obj = cp.Minimize(0)
 prob = cp.Problem(obj, constraints)
 print("Solving problem...")
 prob.solve()
 print(prob.status)
-if verbose: print([[e for e in row] for row in Q_CVX.value])
-
 
 # 6. Return it in a readable format
-# TODO: matchup symbols to cvxpy variables
-symbol_values = dict(zip(symbols, [c.value for c in constraint_cvx_vars]))
+# TODO: work out why some return None
+# TODO: Fix value association from symbols to cvx_vars
+symbols = symbols[UNSAFE] + symbols[INIT] + symbols[DIFF]
+symbols = list(set(symbols))
+symbols.sort(key = lambda symbol: symbol.name)
+symbol_values = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
+print(symbol_values)
 print("Barrier: ", barrier.subs(symbol_values))
 for i in range(len(lam_u)): print(f"lam{i}: {lam_u[i].subs(symbol_values)}")
