@@ -21,6 +21,9 @@ N = 2**n
 
 def flatten(matrix): return [item for row in matrix for item in row]
 
+def to_poly(expr_list, variables, domain=sym.CC):
+    return [sym.poly(l, variables, domain=domain) for l in expr_list]
+
 def create_polynomial(variables, deg=2, coeff_tok='a', monomial=False):
     p = []
     for d in range(deg + 1): p += itertools.combinations_with_replacement(variables, d)
@@ -98,7 +101,7 @@ g_u = [
     1 - np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]),
     np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]) - 1, # Necessary?
 ]
-g_u = [sym.poly(g, variables, domain=sym.CC) for g in g_u]
+g_u = to_poly(g_u, variables)
 
 g_init = [
     np.prod(Z[0] * sym.conjugate(Z[0]) - (1/N - 0.05)),
@@ -106,14 +109,14 @@ g_init = [
     1 - np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]),
     np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]) - 1, # Necessary?
 ]
-g_init = [sym.poly(g, variables, domain=sym.CC) for g in g_init]
+g_init = to_poly(g_init, variables)
 
 
 g_inv = [
     1 - np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]),
     np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]) - 1, # Necessary?
 ]
-g_inv = [sym.poly(g, variables, domain=sym.CC) for g in g_inv]
+g_inv = to_poly(g_inv, variables)
 
 g = {}
 g[UNSAFE] = g_u
