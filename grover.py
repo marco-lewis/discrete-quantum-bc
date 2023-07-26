@@ -12,6 +12,7 @@ verbose = 0
 UNSAFE = 'unsafe'
 INIT = 'init'
 INVARIANT = 'invariant'
+BARRIER = 'barrier'
 DIFF = 'diff'
 LOC = 'loc'
 
@@ -93,8 +94,10 @@ hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 hadamard_n = lambda n: hadamard if n == 1 else np.kron(hadamard, hadamard_n(n-1))
 diffusion = np.dot(hadamard_n(n), np.dot(diffusion_oracle, hadamard_n(n)))
 grover = np.dot(diffusion, oracle)
+faulty_grover = np.dot(np.dot(np.kron(hadamard_n(n-1),np.eye(2,2)), np.dot(diffusion_oracle, hadamard_n(n))), oracle)
+unitary = faulty_grover
 
-eps = 1
+eps = 0.1
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
@@ -141,7 +144,7 @@ if verbose: print(g)
 # 2. Generate lam, barrier
 lams = {}
 for key in g:
-    lam = [create_polynomial(variables, deg=2, coeff_tok='s_' + key + str(i)+';') for i in range(len(g_u))]
+    lam = [create_polynomial(variables, deg=g[key][i].total_degree(), coeff_tok='s_' + key + str(i)+';') for i in range(len(g[key]))]
     lams[key] = lam
 print("lam defined")
 if verbose: print(lams)
@@ -155,7 +158,7 @@ if verbose: print(barrier)
 sym_polys = {}
 for key in [INIT, UNSAFE]:
     sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
-# polys[DIFF] = poly_eq[DIFF](dB, lams, g)
+sym_polys[DIFF] = sym_poly_eq[DIFF](barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, lams, g)
 print("Polynomials made")
 if verbose: print(sym_polys)
 
