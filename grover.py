@@ -109,27 +109,28 @@ sym_poly_eq = dict([
     # (LOC,lambda B, lam, g: -B - dot(lam, g)),
     ])
 
+sum_probs = np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)])
 
 g_u = [
     # -np.prod([0.7 - Z[i] * sym.conjugate(Z[i]) if not(i == mark) else 1 for i in range(N)]),
     Z[mark] * sym.conjugate(Z[mark]) - 0.9,
-    1 - np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]),
-    np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]) - 1, # Necessary?
+    1 - sum_probs,
+    sum_probs - 1,
 ]
 g_u = to_poly(g_u, variables)
 
 g_init = [
     np.prod(Z[0] * sym.conjugate(Z[0]) - (1/N - 0.05)),
     np.prod(1/N + 0.05 - Z[0] * sym.conjugate(Z[0])),
-    1 - np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]),
-    np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]) - 1, # Necessary?
+    1 - sum_probs,
+    sum_probs - 1,
 ]
 g_init = to_poly(g_init, variables)
 
 
 g_inv = [
-    1 - np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]),
-    np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)]) - 1, # Necessary?
+    1 - sum_probs,
+    sum_probs - 1,
 ]
 g_inv = to_poly(g_inv, variables)
 
