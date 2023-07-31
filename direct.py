@@ -18,6 +18,7 @@ def direct_method(unitary, g, Z, eps=0.01, verbose=0):
     sym_poly_eq = dict([
         (INIT,lambda B, lams, g: -B - dot(lams[INIT], g[INIT])),
         (UNSAFE,lambda B, lams, g: B - eps - dot(lams[UNSAFE], g[UNSAFE])),
+        # (DIFF,lambda dB, lams, g: -dB),
         (DIFF,lambda dB, lams, g: -dB - dot(lams[INVARIANT], g[INVARIANT])),
         # (LOC,lambda B, lam, g: -B - dot(lam, g)),
         ])
@@ -53,8 +54,11 @@ def direct_method(unitary, g, Z, eps=0.01, verbose=0):
         Q_CVX, poly_constraint = PSD_constraint_generator(sym_polys[key], symbol_var_dict, matrix_name='POLY_' + str(key), variables=variables)
         cvx_matrices.append(Q_CVX)
         cvx_constraints += poly_constraint
-    cvx_constraints += [M >> 0 for M in cvx_matrices]
     print("Poly constraints generated.")
+
+    print("Generating semidefinite constraints...")
+    cvx_constraints += [M >> 0 for M in cvx_matrices]
+    print("Semidefinite constraints generated.")
 
     # 4. Solve using cvxpy
     obj = cp.Minimize(0)
@@ -64,8 +68,10 @@ def direct_method(unitary, g, Z, eps=0.01, verbose=0):
     print(prob.status)
 
     # 5. Print the barrier in a readable format
+    print("Fetching values...")
     symbols = lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[INVARIANT] + barrier_coeffs
     symbols = list(set(symbols))
     symbols.sort(key = lambda symbol: symbol.name)
     symbol_values = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
+    if verbose: print(symbol_values)
     return barrier.subs(symbol_values)
