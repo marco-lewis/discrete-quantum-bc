@@ -25,7 +25,7 @@ grover = np.dot(diffusion, oracle)
 faulty_grover = np.dot(np.dot(np.kron(hadamard_n(n-1),np.eye(2,2)), np.dot(diffusion_oracle, hadamard_n(n))), oracle)
 unitary = faulty_grover
 
-eps = 0.001
+eps = 0.1
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
@@ -62,5 +62,5 @@ g[INVARIANT] = g_inv
 print("g defined")
 if verbose: print(g)
 
-barrier = direct_method(unitary, g, Z,eps=eps,n=n)
+barrier = direct_method(unitary, g, Z,eps=eps)
 print("Barrier: ", barrier)

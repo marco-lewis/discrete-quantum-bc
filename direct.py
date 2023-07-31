@@ -1,14 +1,11 @@
 from utils import *
 
-def direct_method(unitary, g, Z, eps=0.01, verbose=0,n=2):
-    N = 2**n
+def direct_method(unitary, g, Z, eps=0.01, verbose=0):
     variables = Z + [z.conjugate() for z in Z]
 
     # 1. Generate lam, barrier
     lams = {}
-    for key in g:
-        lam = [create_polynomial(variables, deg=g[key][i].total_degree(), coeff_tok='s_' + key + str(i)+';') for i in range(len(g[key]))]
-        lams[key] = lam
+    for key in g: lams[key] = [create_polynomial(variables, deg=g[key][i].total_degree(), coeff_tok='s_' + key + str(i)+';') for i in range(len(g[key]))]
     print("lam defined")
     if verbose: print(lams)
 
@@ -25,8 +22,7 @@ def direct_method(unitary, g, Z, eps=0.01, verbose=0,n=2):
         # (LOC,lambda B, lam, g: -B - dot(lam, g)),
         ])
     sym_polys = {}
-    for key in [INIT, UNSAFE]:
-        sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
+    for key in [INIT, UNSAFE]: sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
     sym_polys[DIFF] = sym_poly_eq[DIFF](barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, lams, g)
     print("Polynomials made")
     if verbose: print(sym_polys)
@@ -37,8 +33,7 @@ def direct_method(unitary, g, Z, eps=0.01, verbose=0,n=2):
     barrier_coeffs = [next(iter(coeff.free_symbols)) for coeff in barrier.coeffs()]
 
     symbol_var_dict = {}
-    for lam_symbols in lam_coeffs.values():
-        symbol_var_dict.update(symbols_to_cvx_var_dict(lam_symbols))
+    for lam_symbols in lam_coeffs.values(): symbol_var_dict.update(symbols_to_cvx_var_dict(lam_symbols))
     symbol_var_dict.update(symbols_to_cvx_var_dict(barrier_coeffs))
 
     # 3. Get matrix polynomial and constraints

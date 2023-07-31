@@ -13,6 +13,7 @@ INVARIANT = 'invariant'
 BARRIER = 'barrier'
 DIFF = 'diff'
 LOC = 'loc'
+INDUCTIVE = 'inductive'
 
 def flatten(matrix): return [item for row in matrix for item in row]
 
