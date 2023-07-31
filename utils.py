@@ -47,7 +47,7 @@ def convert_exprs(exprs: List[sym.Poly], symbol_var_dict:Dict[sym.Symbol, cp.Var
     return [convert(expr) for expr in exprs]
 
 def convert_exprs_of_matrix(exprs: List[sym.Poly], matrix_to_convert:sym.MatrixSymbol):
-    new_matrix = cp.Variable(matrix_to_convert.shape, name=matrix_to_convert.name)
+    new_matrix = cp.Variable(matrix_to_convert.shape, name=matrix_to_convert.name, hermitian=True)
     def convert(expr):
         if isinstance(expr, sym.Add): return np.sum([convert(arg) for arg in expr.args])
         if isinstance(expr, sym.Mul): return np.prod([convert(arg) for arg in expr.args])
