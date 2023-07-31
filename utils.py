@@ -20,7 +20,7 @@ def flatten(matrix): return [item for row in matrix for item in row]
 def to_poly(expr_list, variables, domain=sym.CC):
     return [sym.poly(l, variables, domain=domain) for l in expr_list]
 
-def create_polynomial(variables, deg=2, coeff_tok='a', monomial=False):
+def create_polynomial(variables, deg=2, coeff_tok='a', monomial=False) -> sym.Poly :
     p = []
     for d in range(deg + 1): p += itertools.combinations_with_replacement(variables, d)
     p = [np.prod([t for t in term]) for term in p]

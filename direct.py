@@ -1,10 +1,14 @@
 from utils import *
 
-def direct_method(unitary, g, Z, eps=0.01, verbose=0):
+def direct_method(unitary : np.ndarray,
+                  g : Dict[str, List[sym.Poly]],
+                  Z : List[sym.Symbol],
+                  eps=0.01,
+                  verbose=0):
     variables = Z + [z.conjugate() for z in Z]
 
     # 1. Generate lam, barrier
-    lams = {}
+    lams : Dict(str, sym.Poly) = {}
     for key in g: lams[key] = [create_polynomial(variables, deg=g[key][i].total_degree(), coeff_tok='s_' + key + str(i)+';') for i in range(len(g[key]))]
     print("lam defined")
     if verbose: print(lams)
@@ -28,25 +32,27 @@ def direct_method(unitary, g, Z, eps=0.01, verbose=0):
     print("Polynomials made")
     if verbose: print(sym_polys)
 
-    lam_coeffs = {}
+    lam_coeffs : Dict[str, List(sym.Symbol)] = {}
     for key in lams: lam_coeffs[key] = flatten([[next(iter(coeff.free_symbols)) for coeff in lam.coeffs()] for lam in lams[key]])
 
     barrier_coeffs = [next(iter(coeff.free_symbols)) for coeff in barrier.coeffs()]
 
-    symbol_var_dict = {}
+    symbol_var_dict : Dict[sym.Symbol, cp.Variable]= {}
     for lam_symbols in lam_coeffs.values(): symbol_var_dict.update(symbols_to_cvx_var_dict(lam_symbols))
     symbol_var_dict.update(symbols_to_cvx_var_dict(barrier_coeffs))
 
     # 3. Get matrix polynomial and constraints
     cvx_constraints = []
-    cvx_matrices = []
+    cvx_matrices : List[cp.Variable] = []
 
     print("Getting lam constraints...")
     for key in lams:
+        i = 0
         for poly in lams[key]:
-            S_CVX, lam_constraints = PSD_constraint_generator(poly, symbol_var_dict, matrix_name='LAM_' + str(key), variables=variables)
+            S_CVX, lam_constraints = PSD_constraint_generator(poly, symbol_var_dict, matrix_name='LAM_' + str(key) + str(i), variables=variables)
             cvx_matrices.append(S_CVX)
             cvx_constraints += lam_constraints
+            i += 1
     print("lam constraints generated.")
 
     print("Generating polynomial constraints...")
@@ -69,9 +75,11 @@ def direct_method(unitary, g, Z, eps=0.01, verbose=0):
 
     # 5. Print the barrier in a readable format
     print("Fetching values...")
-    symbols = lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[INVARIANT] + barrier_coeffs
+    symbols : List[sym.Symbol] = lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[INVARIANT] + barrier_coeffs
     symbols = list(set(symbols))
     symbols.sort(key = lambda symbol: symbol.name)
     symbol_values = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
-    if verbose: print(symbol_values)
+    if verbose:
+        print(symbol_values)
+        for m in cvx_matrices: print(m, m.value)
     return barrier.subs(symbol_values)
