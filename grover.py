@@ -62,5 +62,5 @@ g[INVARIANT] = g_inv
 print("g defined")
 if verbose: print(g)
 
-barrier = direct_method(unitary, g, Z,eps=eps)
+barrier = direct_method(unitary, g, Z, eps=eps, verbose=verbose)
 print("Barrier: ", barrier)
