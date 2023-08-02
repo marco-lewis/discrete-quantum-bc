@@ -32,12 +32,12 @@ def create_polynomial(variables, deg=2, coeff_tok='a', monomial=False) -> sym.Po
     p = np.sum([coeffs[i] * p[i] for i in range(len(p))])
     return sym.poly(p, variables, domain=K)
 
-def symbols_to_cvx_var_dict(symbols: List[sym.Symbol]):
+def symbols_to_cvx_var_dict(symbols : List[sym.Symbol]):
     cvx_vars = [cp.Variable(name = s.name, complex=True) for s in symbols]
     symbol_var_dict = dict(zip(symbols, cvx_vars))
     return symbol_var_dict
 
-def convert_exprs(exprs: List[sym.Poly], symbol_var_dict:Dict[sym.Symbol, cp.Variable]):
+def convert_exprs(exprs : List[sym.Poly], symbol_var_dict : Dict[sym.Symbol, cp.Variable]):
     def convert(expr):
         if isinstance(expr, sym.Add): return np.sum([convert(arg) for arg in expr.args])
         if isinstance(expr, sym.Mul): return np.prod([convert(arg) for arg in expr.args])
@@ -46,16 +46,18 @@ def convert_exprs(exprs: List[sym.Poly], symbol_var_dict:Dict[sym.Symbol, cp.Var
         return expr
     return [convert(expr) for expr in exprs]
 
-def convert_exprs_of_matrix(exprs: List[sym.Poly], matrix_to_convert:sym.MatrixSymbol):
-    new_matrix = cp.Variable(matrix_to_convert.shape, name=matrix_to_convert.name, hermitian=True)
+def convert_exprs_of_matrix(exprs : List[sym.Poly], cvx_matrix : cp.Variable):
     def convert(expr):
         if isinstance(expr, sym.Add): return np.sum([convert(arg) for arg in expr.args])
         if isinstance(expr, sym.Mul): return np.prod([convert(arg) for arg in expr.args])
-        if isinstance(expr, MatrixElement): return new_matrix[expr.i, expr.j]
+        if isinstance(expr, MatrixElement): return cvx_matrix[expr.i, expr.j]
         return expr
     return [convert(expr) for expr in exprs]
 
-def PSD_constraint_generator(sym_polynomial, symbol_var_dict, matrix_name='Q', variables=[]):
+def PSD_constraint_generator(sym_polynomial : sym.Poly,
+                             symbol_var_dict : Dict[sym.Symbol, cp.Variable],
+                             matrix_name='Q',
+                             variables=[]):
     # Convert sympy polynomial to cvx variables
     cvx_coeffs = convert_exprs(sym_polynomial.coeffs(), symbol_var_dict)
     poly_monom_to_cvx = dict(zip(sym_polynomial.monoms(), cvx_coeffs))
@@ -70,7 +72,7 @@ def PSD_constraint_generator(sym_polynomial, symbol_var_dict, matrix_name='Q', v
 
     # Create cvx variable matrix
     Q_CVX = cp.Variable((num_of_monom, num_of_monom), hermitian=True, name=matrix_name)
-    Q_cvx_coeffs = convert_exprs_of_matrix(vH_Q_v.coeffs(), Q_SYM)
+    Q_cvx_coeffs = convert_exprs_of_matrix(vH_Q_v.coeffs(), Q_CVX)
     Q_monom_to_cvx = dict(zip(vH_Q_v.monoms(), Q_cvx_coeffs))
 
     # Link matrix variables to polynomial variables
