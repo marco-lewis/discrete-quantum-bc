@@ -52,6 +52,7 @@ def direct_method(unitary : np.ndarray,
             S_CVX, lam_constraints = PSD_constraint_generator(poly, symbol_var_dict, matrix_name='LAM_' + str(key) + str(i), variables=variables)
             cvx_matrices.append(S_CVX)
             cvx_constraints += lam_constraints
+            print(str(key) + str(i) + " done.")
             i += 1
     print("lam constraints generated.")
 
@@ -60,6 +61,7 @@ def direct_method(unitary : np.ndarray,
         Q_CVX, poly_constraint = PSD_constraint_generator(sym_polys[key], symbol_var_dict, matrix_name='POLY_' + str(key), variables=variables)
         cvx_matrices.append(Q_CVX)
         cvx_constraints += poly_constraint
+        print(str(key) + " done.")
     print("Poly constraints generated.")
 
     print("Generating semidefinite constraints...")
@@ -70,7 +72,7 @@ def direct_method(unitary : np.ndarray,
     obj = cp.Minimize(0)
     prob = cp.Problem(obj, cvx_constraints)
     print("Solving problem...")
-    prob.solve()
+    prob.solve(verbose=verbose)
     print(prob.status)
 
     # 5. Print the barrier in a readable format
@@ -80,6 +82,10 @@ def direct_method(unitary : np.ndarray,
     symbols.sort(key = lambda symbol: symbol.name)
     symbol_values = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
     if verbose:
-        print(symbol_values)
+        for key in lams:
+            i = 0
+            for lam in lams[key]:
+                print("lam_" + str(key) + str(i), lam.subs(symbol_values))
+                i += 1
         for m in cvx_matrices: print(m, m.value)
     return barrier.subs(symbol_values)
