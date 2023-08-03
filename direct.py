@@ -20,15 +20,16 @@ def direct_method(unitary : np.ndarray,
     # 2. Make arbitrary polynomials for SOS terms
     dot = lambda lam, g: np.sum([li * gi for li,gi in zip(lam, g)])
     sym_poly_eq = dict([
-        (INIT,lambda B, lams, g: -B - dot(lams[INIT], g[INIT])),
-        (UNSAFE,lambda B, lams, g: B - eps - dot(lams[UNSAFE], g[UNSAFE])),
+        (INIT,lambda B, lams, g: sym.poly(-B - dot(lams[INIT], g[INIT]), variables)),
+        (UNSAFE,lambda B, lams, g: sym.poly(B - eps - dot(lams[UNSAFE], g[UNSAFE]), variables)),
         # (DIFF,lambda dB, lams, g: -dB),
-        (DIFF,lambda dB, lams, g: -dB - dot(lams[INVARIANT], g[INVARIANT])),
+        (DIFF,lambda dB, lams, g: sym.poly(-dB - dot(lams[INVARIANT], g[INVARIANT]), variables)),
         # (LOC,lambda B, lam, g: -B - dot(lam, g)),
         ])
     sym_polys = {}
-    for key in [INIT, UNSAFE]: sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
-    sym_polys[DIFF] = sym_poly_eq[DIFF](barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, lams, g)
+    for key in [INIT, UNSAFE, DIFF]:
+        if key == DIFF: sym_polys[key] = sym_poly_eq[key](barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, lams, g)
+        else: sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
     print("Polynomials made")
     if verbose: print(sym_polys)
 
@@ -67,20 +68,24 @@ def direct_method(unitary : np.ndarray,
     print("Generating semidefinite constraints...")
     cvx_constraints += [M >> 0 for M in cvx_matrices]
     print("Semidefinite constraints generated.")
+    print("Constraints generated")
+    if verbose: print(cvx_constraints)
 
     # 4. Solve using cvxpy
     obj = cp.Minimize(0)
     prob = cp.Problem(obj, cvx_constraints)
     print("Solving problem...")
-    prob.solve(verbose=verbose)
+    prob.solve(verbose=bool(verbose))
     print(prob.status)
+    if prob.status in ["infeasible", "unbounded"]: raise Exception("Cannot get barrier from problem.")
 
     # 5. Print the barrier in a readable format
     print("Fetching values...")
-    symbols : List[sym.Symbol] = lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[INVARIANT] + barrier_coeffs
+    symbols : List[sym.Symbol] = barrier_coeffs + lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[INVARIANT]
     symbols = list(set(symbols))
     symbols.sort(key = lambda symbol: symbol.name)
     symbol_values = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
+    for key in symbol_values: symbol_values[key] = symbol_values[key] if abs(symbol_values[key]) > 1e-10 else 0
     if verbose:
         for key in lams:
             i = 0
