@@ -32,7 +32,7 @@ def direct_method(unitary : np.ndarray,
     for key in [INIT, UNSAFE, DIFF]:
         if key == DIFF: sym_polys[key] = sym_poly_eq[key](barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, lams, g)
         else: sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
-        if verbose: print("Polynomial for " + KEY + " made.")
+        if verbose: print("Polynomial for " + key + " made.")
     print("Polynomials made.")
     if verbose: print(sym_polys)
 
