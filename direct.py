@@ -11,7 +11,7 @@ def direct_method(unitary : np.ndarray,
     lams : Dict(str, sym.Poly) = {}
     for key in g:
         lams[key] = [create_polynomial(variables, deg=g[key][i].total_degree(), coeff_tok='s_' + key + str(i)+';') for i in range(len(g[key]))]
-        if verbose: print("lam polynomial for " + key + " made.")
+        print("lam polynomial for " + key + " made.")
     print("lams defined.")
     if verbose: print(lams)
 
@@ -32,7 +32,7 @@ def direct_method(unitary : np.ndarray,
     for key in [INIT, UNSAFE, DIFF]:
         if key == DIFF: sym_polys[key] = sym_poly_eq[key](barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, lams, g)
         else: sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
-        if verbose: print("Polynomial for " + key + " made.")
+        print("Polynomial for " + key + " made.")
     print("Polynomials made.")
     if verbose: print(sym_polys)
 
