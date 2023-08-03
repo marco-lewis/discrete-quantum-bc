@@ -9,12 +9,14 @@ def direct_method(unitary : np.ndarray,
 
     # 1. Generate lam, barrier
     lams : Dict(str, sym.Poly) = {}
-    for key in g: lams[key] = [create_polynomial(variables, deg=g[key][i].total_degree(), coeff_tok='s_' + key + str(i)+';') for i in range(len(g[key]))]
-    print("lam defined")
+    for key in g:
+        lams[key] = [create_polynomial(variables, deg=g[key][i].total_degree(), coeff_tok='s_' + key + str(i)+';') for i in range(len(g[key]))]
+        if verbose: print("lam polynomial for " + key + " made.")
+    print("lams defined.")
     if verbose: print(lams)
 
     barrier = create_polynomial(variables, deg=2, coeff_tok='b')
-    print("Barrier made")
+    print("Barrier made.")
     if verbose: print(barrier)
 
     # 2. Make arbitrary polynomials for SOS terms
@@ -30,7 +32,8 @@ def direct_method(unitary : np.ndarray,
     for key in [INIT, UNSAFE, DIFF]:
         if key == DIFF: sym_polys[key] = sym_poly_eq[key](barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, lams, g)
         else: sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
-    print("Polynomials made")
+        if verbose: print("Polynomial for " + KEY + " made.")
+    print("Polynomials made.")
     if verbose: print(sym_polys)
 
     lam_coeffs : Dict[str, List(sym.Symbol)] = {}
@@ -46,7 +49,7 @@ def direct_method(unitary : np.ndarray,
     cvx_constraints = []
     cvx_matrices : List[cp.Variable] = []
 
-    print("Getting lam constraints...")
+    print("Generating lam constraints...")
     for key in lams:
         i = 0
         for poly in lams[key]:
