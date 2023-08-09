@@ -25,13 +25,12 @@ def direct_method(unitary : np.ndarray,
         (INIT,lambda B, lams, g: sym.poly(-B - dot(lams[INIT], g[INIT]), variables)),
         (UNSAFE,lambda B, lams, g: sym.poly(B - eps - dot(lams[UNSAFE], g[UNSAFE]), variables)),
         # (DIFF,lambda dB, lams, g: -dB),
-        (DIFF,lambda dB, lams, g: sym.poly(-dB - dot(lams[INVARIANT], g[INVARIANT]), variables)),
+        (DIFF,lambda B, lams, g: sym.poly(-B.subs(zip(Z, np.dot(unitary, Z))) + B - dot(lams[INVARIANT], g[INVARIANT]), variables)),
         # (LOC,lambda B, lam, g: -B - dot(lam, g)),
         ])
     sym_polys = {}
     for key in [INIT, UNSAFE, DIFF]:
-        if key == DIFF: sym_polys[key] = sym_poly_eq[key](barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, lams, g)
-        else: sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
+        sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
         print("Polynomial for " + key + " made.")
     print("Polynomials made.")
     if verbose: print(sym_polys)
