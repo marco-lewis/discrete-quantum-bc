@@ -1,9 +1,11 @@
 from direct import direct_method
+from log_settings import setup_logger
 from utils import *
 
 import numpy as np
 import sympy as sym
 
+logger = setup_logger("grover.log")
 verbose = 0
 
 n = 2
@@ -33,19 +35,21 @@ variables = Z + [z.conjugate() for z in Z]
 sum_probs = np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)])
 
 g_u = [
-    # -np.prod([0.7 - Z[i] * sym.conjugate(Z[i]) if not(i == mark) else 1 for i in range(N)]),
+    # Z[1] * sym.conjugate(Z[1]) - 0.9,
+    # -np.prod([0.9 - Z[i] * sym.conjugate(Z[i]) if not(i == mark) else 1 for i in range(N)]),
     Z[mark] * sym.conjugate(Z[mark]) - 0.9,
     1 - sum_probs,
     sum_probs - 1,
 ]
 g_u = to_poly(g_u, variables)
 
-g_init = [
-    np.prod(Z[0] * sym.conjugate(Z[0]) - (1/N - 0.05)),
-    np.prod(1/N + 0.05 - Z[0] * sym.conjugate(Z[0])),
+g_init = [z * sym.conjugate(z) - (1/N - 0.05) for z in Z]
+g_init += [1/N + 0.05 - z * sym.conjugate(z) for z in Z]
+g_init += [
+    # -(Z[0] - sym.conjugate(Z[0])),
     1 - sum_probs,
     sum_probs - 1,
-]
+    ]
 g_init = to_poly(g_init, variables)
 
 
@@ -59,8 +63,8 @@ g = {}
 g[UNSAFE] = g_u
 g[INIT] = g_init
 g[INVARIANT] = g_inv
-print("g defined")
-if verbose: print(g)
+logger.info("g defined")
+logger.debug(g)
 
-barrier = direct_method(unitary, g, Z, eps=eps, verbose=verbose)
+barrier = direct_method(unitary, g, Z, barrier_degree=4, eps=eps, verbose=verbose)
 print("Barrier: ", barrier)
