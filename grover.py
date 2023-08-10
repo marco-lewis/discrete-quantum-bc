@@ -43,8 +43,9 @@ g_u = [
 ]
 g_u = to_poly(g_u, variables)
 
-g_init = [z * sym.conjugate(z) - (1/N - 0.05) for z in Z]
-g_init += [1/N + 0.05 - z * sym.conjugate(z) for z in Z]
+d = 0.01
+g_init = [z * sym.conjugate(z) - (1/N - d) for z in Z]
+g_init += [1/N + d - z * sym.conjugate(z) for z in Z]
 g_init += [
     # -(Z[0] - sym.conjugate(Z[0])),
     1 - sum_probs,
