@@ -3,6 +3,7 @@ from utils import *
 def direct_method(unitary : np.ndarray,
                   g : Dict[str, List[sym.Poly]],
                   Z : List[sym.Symbol],
+                  barrier_degree=2,
                   eps=0.01,
                   verbose=0):
     variables = Z + [z.conjugate() for z in Z]
@@ -15,7 +16,7 @@ def direct_method(unitary : np.ndarray,
     print("lams defined.")
     if verbose: print(lams)
 
-    barrier = create_polynomial(variables, deg=2, coeff_tok='b')
+    barrier = create_polynomial(variables, deg=barrier_degree, coeff_tok='b')
     print("Barrier made.")
     if verbose: print(barrier)
 
@@ -29,7 +30,7 @@ def direct_method(unitary : np.ndarray,
         # (LOC,lambda B, lam, g: -B - dot(lam, g)),
         ])
     sym_polys = {}
-    for key in [INIT, UNSAFE, DIFF]:
+    for key in sym_poly_eq:
         sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
         print("Polynomial for " + key + " made.")
     print("Polynomials made.")
