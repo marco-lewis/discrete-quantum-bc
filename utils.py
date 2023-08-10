@@ -71,7 +71,7 @@ def PSD_constraint_generator(sym_polynomial : sym.Poly,
     vH_Q_v = sym.poly(vector_monomials.conj().T @ Q_SYM @ vector_monomials, variables)
 
     # Create cvx matrix and dictionary of monomials to cvx matrix terms
-    Q_CVX = cp.Variable((num_of_monom, num_of_monom), hermitian=True, name=matrix_name)
+    Q_CVX = cp.Variable((num_of_monom, num_of_monom), complex=True, name=matrix_name)
     Q_cvx_coeffs = convert_exprs_of_matrix(vH_Q_v.coeffs(), Q_CVX)
     Q_monom_to_cvx = dict(zip(vH_Q_v.monoms(), Q_cvx_coeffs))
 

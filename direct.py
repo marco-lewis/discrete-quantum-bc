@@ -32,6 +32,7 @@ def direct_method(unitary : np.ndarray,
         (DIFF,lambda B, lams, g: sym.poly(-B.subs(zip(Z, np.dot(unitary, Z))) + B - np.dot(lams[INVARIANT], g[INVARIANT]), variables)),
         # (LOC,lambda B, lam, g: -B - np.dot(lam, g)),
         ])
+    logger.info("Making polynomials.")
     sym_polys = {}
     for key in sym_poly_eq:
         sym_polys[key] = sym_poly_eq[key](barrier, lams, g)

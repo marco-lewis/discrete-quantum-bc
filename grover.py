@@ -27,8 +27,6 @@ grover = np.dot(diffusion, oracle)
 faulty_grover = np.dot(np.dot(np.kron(hadamard_n(n-1),np.eye(2,2)), np.dot(diffusion_oracle, hadamard_n(n))), oracle)
 unitary = faulty_grover
 
-eps = 0.1
-
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
 
@@ -44,7 +42,8 @@ g_u = [
 g_u = to_poly(g_u, variables)
 
 d = 0.01
-g_init = [z * sym.conjugate(z) - (1/N - d) for z in Z]
+g_init = []
+g_init += [z * sym.conjugate(z) - (1/N - d) for z in Z]
 g_init += [1/N + d - z * sym.conjugate(z) for z in Z]
 g_init += [
     # -(Z[0] - sym.conjugate(Z[0])),
@@ -67,5 +66,9 @@ g[INVARIANT] = g_inv
 logger.info("g defined")
 logger.debug(g)
 
-barrier = direct_method(unitary, g, Z, barrier_degree=4, eps=eps, verbose=verbose)
-print("Barrier: ", barrier)
+eps = 0.1
+barrier_degree=2
+logger.info("Barrier degree: " + str(barrier_degree) + ", eps: " + str(eps))
+
+barrier = direct_method(unitary, g, Z, barrier_degree=barrier_degree, eps=eps, verbose=verbose)
+logger.info("Barrier: " +  str(barrier))
