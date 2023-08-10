@@ -25,13 +25,12 @@ def direct_method(unitary : np.ndarray,
     logger.debug(barrier)
 
     # 2. Make arbitrary polynomials for SOS terms
-    dot = lambda lam, g: np.sum([li * gi for li,gi in zip(lam, g)])
     sym_poly_eq = dict([
-        (INIT,lambda B, lams, g: sym.poly(-B - dot(lams[INIT], g[INIT]), variables)),
-        (UNSAFE,lambda B, lams, g: sym.poly(B - eps - dot(lams[UNSAFE], g[UNSAFE]), variables)),
+        (INIT,lambda B, lams, g: sym.poly(-B - np.dot(lams[INIT], g[INIT]) + eps, variables)),
+        (UNSAFE,lambda B, lams, g: sym.poly(B - 1 - np.dot(lams[UNSAFE], g[UNSAFE]), variables)),
         # (DIFF,lambda dB, lams, g: -dB),
-        (DIFF,lambda B, lams, g: sym.poly(-B.subs(zip(Z, np.dot(unitary, Z))) + B - dot(lams[INVARIANT], g[INVARIANT]), variables)),
-        # (LOC,lambda B, lam, g: -B - dot(lam, g)),
+        (DIFF,lambda B, lams, g: sym.poly(-B.subs(zip(Z, np.dot(unitary, Z))) + B - np.dot(lams[INVARIANT], g[INVARIANT]), variables)),
+        # (LOC,lambda B, lam, g: -B - np.dot(lam, g)),
         ])
     sym_polys = {}
     for key in sym_poly_eq:
@@ -84,7 +83,9 @@ def direct_method(unitary : np.ndarray,
     logger.info("Solving problem...")
     prob.solve(verbose=bool(verbose))
     logger.info(prob.status)
-    if prob.status in ["infeasible", "unbounded"]: logging.error("Cannot get barrier from problem.")
+    if prob.status in ["infeasible", "unbounded"]:
+        logging.error("Cannot get barrier from problem.")
+        raise
 
     # 5. Return the barrier in a readable format
     logger.info("Fetching values...")
