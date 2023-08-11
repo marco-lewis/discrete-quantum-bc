@@ -27,7 +27,7 @@ def check_barrier(barrier : sym.Poly, constraints : Dict[str, List[sym.Poly]], Z
         s.pop()
     s = z3.Solver()
     print("Barrier real")
-    _check(s, (z3.And(constraints[INVARIANT], z3.Not(z3_barrier.i == 0)))
+    _check(s, (z3.And(constraints[INVARIANT]), z3.Not(z3_barrier.i == 0)))
     print(INIT)
     _check(s, (z3.And(constraints[INIT]), z3_barrier.r > 0))
     print(UNSAFE)
