@@ -3,12 +3,11 @@ from utils import *
 
 from collections import defaultdict
 from functools import reduce
+import logging
 
 import z3
 
-# Need to convert a generated sympy barrier into Z3 expressions
-
-# Then check against some conditions given in Z3
+logger = logging.getLogger("check")
 def check_barrier(barrier : sym.Poly, constraints : Dict[str, List[sym.Poly]], Z=[], unitary=np.eye(2,2)):
     variables = Z + [z.conjugate() for z in Z]
     var_z3_dict = dict(zip(Z, [Complex(var.name) for var in Z]))
@@ -21,19 +20,20 @@ def check_barrier(barrier : sym.Poly, constraints : Dict[str, List[sym.Poly]], Z
         s.push()
         s.add(cond)
         sat = s.check()
-        print(sat)
+        logger.info(sat)
         if not(sat == z3.unsat):
-            raise Exception("Counter example: " + str(s.model()))
+            logger.error("Counter example: " + str(s.model()))
+            raise
         s.pop()
     s = z3.Solver()
-    print("Barrier real")
+    logger.info("Barrier real")
     _check(s, (z3.And(constraints[INVARIANT]), z3.Not(z3_barrier.i == 0)))
-    print(INIT)
+    logger.info(INIT)
     _check(s, (z3.And(constraints[INIT]), z3_barrier.r > 0))
-    print(UNSAFE)
+    logger.info(UNSAFE)
     _check(s, (z3.And(constraints[UNSAFE]), z3_barrier.r < 0))
-    print(INVARIANT)
-    _check(s, (z3.And(constraints[INVARIANT], z3_diff > 0)))
+    logger.info(INVARIANT)
+    _check(s, (z3.And(constraints[INVARIANT], z3_diff.r > 0)))
 
 # Based on: https://stackoverflow.com/a/38980538/19768075
 def _sympy_poly_2_z3(var_map, e) -> z3.ExprRef:
