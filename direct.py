@@ -12,7 +12,7 @@ def direct_method(unitary : np.ndarray,
                   k=1,
                   verbose=0):
     variables = Z + [z.conjugate() for z in Z]
-    d = np.ceil(k * eps)
+    d = np.ceil(k * eps) + 1
     logger.info("Barrier degree: " + str(barrier_degree) + ", eps: " + str(eps) + ", k: " + str(k) + ", d: " + str(d))
 
     # 1. Generate lam, barrier

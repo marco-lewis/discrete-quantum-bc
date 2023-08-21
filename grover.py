@@ -70,8 +70,9 @@ logger.debug(g)
 
 eps = 0.1
 barrier_degree=2
+k = 2
 
-barrier = direct_method(unitary, g, Z, barrier_degree=barrier_degree, eps=eps, verbose=verbose)
+barrier = direct_method(unitary, g, Z, barrier_degree=barrier_degree, eps=eps, verbose=verbose, k=k)
 logger.info("Barrier: " +  str(barrier))
 with open("logs/barrier.log", 'w') as file:
     file.write(repr(barrier))
