@@ -9,14 +9,19 @@ def direct_method(unitary : np.ndarray,
                   Z : List[sym.Symbol],
                   barrier_degree=2,
                   eps=0.01,
+                  k=1,
                   verbose=0):
     variables = Z + [z.conjugate() for z in Z]
+    d = np.ceil(k * eps)
+    logger.info("Barrier degree: " + str(barrier_degree) + ", eps: " + str(eps) + ", k: " + str(k) + ", d: " + str(d))
 
     # 1. Generate lam, barrier
     lams : Dict(str, sym.Poly) = {}
     for key in g:
         lams[key] = [create_polynomial(variables, deg=g[key][i].total_degree(), coeff_tok='s_' + key + str(i)+';') for i in range(len(g[key]))]
         logger.info("lam polynomial for " + key + " made.")
+    lams[INDUCTIVE] = [create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + INDUCTIVE + str(i)+';') for i in range(len(g[INVARIANT]))]
+    logger.info("lam polynomial for " + INDUCTIVE + " made.")
     logger.info("lams defined.")
     logger.debug(lams)
 
@@ -26,16 +31,20 @@ def direct_method(unitary : np.ndarray,
 
     # 2. Make arbitrary polynomials for SOS terms
     sym_poly_eq = dict([
-        (INIT,lambda B, lams, g: sym.poly(-B - np.dot(lams[INIT], g[INIT]) + eps, variables)),
-        (UNSAFE,lambda B, lams, g: sym.poly(B - 1 - np.dot(lams[UNSAFE], g[UNSAFE]), variables)),
-        # (DIFF,lambda dB, lams, g: -dB),
-        (DIFF,lambda B, lams, g: sym.poly(-B.subs(zip(Z, np.dot(unitary, Z))) + B - np.dot(lams[INVARIANT], g[INVARIANT]), variables)),
-        # (LOC,lambda B, lam, g: -B - np.dot(lam, g)),
+        (INIT,lambda B, lams, g: sym.poly(-B - np.dot(lams[INIT], g[INIT]), variables)),
+        (UNSAFE,lambda B, lams, g: sym.poly(B - d - np.dot(lams[UNSAFE], g[UNSAFE]), variables)),
+        (DIFF,lambda B, f, lams, g: sym.poly(-B.subs(zip(Z, np.dot(f, Z))) + B - np.dot(lams[INVARIANT], g[INVARIANT]) + eps, variables)),
+        (INDUCTIVE,lambda B, fk, lams, g: sym.poly(-B.subs(zip(Z, np.dot(fk, Z)))) + B - np.dot(lams[INDUCTIVE], g[INVARIANT])),
         ])
     logger.info("Making polynomials.")
     sym_polys = {}
     for key in sym_poly_eq:
-        sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
+        if key == DIFF: sym_polys[key] = sym_poly_eq[key](barrier, unitary, lams, g)
+        elif key == INDUCTIVE:
+            fk = unitary
+            for i in range(1,k): fk = np.dot(unitary, fk)
+            sym_polys[key] = sym_poly_eq[key](barrier, fk, lams, g)
+        else: sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
         logger.info("Polynomial for " + key + " made.")
     logger.info("Polynomials made.")
     logger.debug(sym_polys)
@@ -90,7 +99,7 @@ def direct_method(unitary : np.ndarray,
 
     # 5. Return the barrier in a readable format
     logger.info("Fetching values...")
-    symbols : List[sym.Symbol] = barrier_coeffs + lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[INVARIANT]
+    symbols : List[sym.Symbol] = barrier_coeffs + lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[INVARIANT] + lam_coeffs[INDUCTIVE]
     symbols = list(set(symbols))
     symbols.sort(key = lambda symbol: symbol.name)
     symbol_values = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))

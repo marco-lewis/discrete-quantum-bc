@@ -7,7 +7,7 @@ import numpy as np
 import sympy as sym
 
 logger = setup_logger("grover.log")
-verbose = 0
+verbose = 1
 
 n = 2
 mark = 2
@@ -46,8 +46,9 @@ d = 0.01
 g_init = []
 g_init += [z * sym.conjugate(z) - (1/N - d) for z in Z]
 g_init += [1/N + d - z * sym.conjugate(z) for z in Z]
+# g_init += [-1j * (z - sym.conjugate(z)) for z in Z]
+# g_init += [1j * (z - sym.conjugate(z)) for z in Z]
 g_init += [
-    # -(Z[0] - sym.conjugate(Z[0])),
     1 - sum_probs,
     sum_probs - 1,
     ]
@@ -69,7 +70,6 @@ logger.debug(g)
 
 eps = 0.1
 barrier_degree=2
-logger.info("Barrier degree: " + str(barrier_degree) + ", eps: " + str(eps))
 
 barrier = direct_method(unitary, g, Z, barrier_degree=barrier_degree, eps=eps, verbose=verbose)
 logger.info("Barrier: " +  str(barrier))
