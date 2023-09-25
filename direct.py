@@ -95,7 +95,7 @@ def direct_method(unitary : np.ndarray,
     logger.info(prob.status)
     if prob.status in ["infeasible", "unbounded"]:
         logging.error("Cannot get barrier from problem.")
-        raise
+        return sym.core.numbers.Infinity
 
     # 5. Return the barrier in a readable format
     logger.info("Fetching values...")

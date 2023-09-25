@@ -76,4 +76,4 @@ barrier = direct_method(unitary, g, Z, barrier_degree=barrier_degree, eps=eps, v
 logger.info("Barrier: " +  str(barrier))
 with open("logs/barrier.log", 'w') as file:
     file.write(repr(barrier))
-check_barrier(barrier, g, Z=Z, unitary=unitary)
+if not(barrier.equals(sym.core.numbers.Infinity)): check_barrier(barrier, g, Z=Z, unitary=unitary)
