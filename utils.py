@@ -64,7 +64,7 @@ def PSD_constraint_generator(sym_polynomial : sym.Poly,
     poly_monom_to_cvx = defaultdict(lambda: 0.0, poly_monom_to_cvx)
 
     # Create sympy matrix and quadratic form as polynomial
-    m = create_polynomial(variables[:len(variables)//2], deg=int(np.ceil(sym_polynomial.total_degree()/2)), monomial=True)
+    m = create_polynomial(variables[:len(variables)//2], deg=sym_polynomial.total_degree(), monomial=True)
     vector_monomials = np.array([np.prod([x**k for x, k in zip(m.gens, mon)]) for mon in m.monoms()])
     num_of_monom = len(vector_monomials)
     Q_SYM = sym.MatrixSymbol(matrix_name, num_of_monom, num_of_monom)
