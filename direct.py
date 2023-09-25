@@ -10,7 +10,10 @@ def direct_method(unitary : np.ndarray,
                   barrier_degree=2,
                   eps=0.01,
                   k=1,
-                  verbose=0):
+                  verbose=0,
+                  log_level=logging.INFO):
+    logger.setLevel(log_level)
+    
     variables = Z + [z.conjugate() for z in Z]
     d = np.ceil(k * eps) + 1
     logger.info("Barrier degree: " + str(barrier_degree) + ", eps: " + str(eps) + ", k: " + str(k) + ", d: " + str(d))

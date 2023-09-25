@@ -6,6 +6,8 @@ from utils import *
 import numpy as np
 import sympy as sym
 
+import logging
+
 logger = setup_logger("grover.log")
 verbose = 1
 
@@ -72,7 +74,7 @@ eps = 0.1
 barrier_degree=2
 k = 2
 
-barrier = direct_method(unitary, g, Z, barrier_degree=barrier_degree, eps=eps, verbose=verbose, k=k)
+barrier = direct_method(unitary, g, Z, barrier_degree=barrier_degree, eps=eps, verbose=verbose, k=k, log_level=logging.DEBUG)
 logger.info("Barrier: " +  str(barrier))
 with open("logs/barrier.log", 'w') as file:
     file.write(repr(barrier))
