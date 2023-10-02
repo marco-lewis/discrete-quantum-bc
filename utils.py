@@ -1,11 +1,15 @@
 from collections import defaultdict
+from functools import reduce
 import itertools
+import logging
 from typing import Dict, List
 
-import cvxpy as cp
 import numpy as np
+import picos
 import sympy as sym
 from sympy.matrices.expressions.matexpr import MatrixElement
+
+logger = logging.getLogger("utils")
 
 UNSAFE = 'unsafe'
 INIT = 'init'
@@ -16,6 +20,11 @@ LOC = 'loc'
 INDUCTIVE = 'inductive'
 
 def flatten(matrix): return [item for row in matrix for item in row]
+
+def multiply(xs):
+    out = 1
+    for x in xs: out = out * x
+    return out
 
 def to_poly(expr_list, variables, domain=sym.CC):
     return [sym.poly(l, variables, domain=domain) for l in expr_list]
@@ -33,29 +42,29 @@ def create_polynomial(variables, deg=2, coeff_tok='a', monomial=False) -> sym.Po
     return sym.poly(p, variables, domain=K)
 
 def symbols_to_cvx_var_dict(symbols : List[sym.Symbol]):
-    cvx_vars = [cp.Variable(name = s.name, complex=True) for s in symbols]
+    cvx_vars = [picos.ComplexVariable(name = s.name) for s in symbols]
     symbol_var_dict = dict(zip(symbols, cvx_vars))
     return symbol_var_dict
 
-def convert_exprs(exprs : List[sym.Poly], symbol_var_dict : Dict[sym.Symbol, cp.Variable]):
+def convert_exprs(exprs : List[sym.Poly], symbol_var_dict : Dict[sym.Symbol, picos.ComplexVariable]):
     def convert(expr):
-        if isinstance(expr, sym.Add): return np.sum([convert(arg) for arg in expr.args])
-        if isinstance(expr, sym.Mul): return np.prod([convert(arg) for arg in expr.args])
+        if isinstance(expr, sym.Add): return picos.sum([convert(arg) for arg in expr.args])
+        if isinstance(expr, sym.Mul): return reduce(lambda x, y: x * y, [convert(arg) for arg in expr.args])
         if isinstance(expr, sym.Pow): return convert(expr.args[0])**convert(expr.args[1])
         if symbol_var_dict.get(expr) is not None: return symbol_var_dict[expr]
-        return expr
+        return float(expr)
     return [convert(expr) for expr in exprs]
 
-def convert_exprs_of_matrix(exprs : List[sym.Poly], cvx_matrix : cp.Variable):
+def convert_exprs_of_matrix(exprs : List[sym.Poly], cvx_matrix : picos.HermitianVariable):
     def convert(expr):
-        if isinstance(expr, sym.Add): return np.sum([convert(arg) for arg in expr.args])
-        if isinstance(expr, sym.Mul): return np.prod([convert(arg) for arg in expr.args])
-        if isinstance(expr, MatrixElement): return cvx_matrix[expr.i, expr.j]
-        return expr
+        if isinstance(expr, sym.Add): return picos.sum([convert(arg) for arg in expr.args])
+        if isinstance(expr, sym.Mul): return reduce(lambda x, y: x * y, [convert(arg) for arg in expr.args], 1)
+        if isinstance(expr, MatrixElement): return cvx_matrix[int(expr.i), int(expr.j)]
+        return float(expr)
     return [convert(expr) for expr in exprs]
 
 def PSD_constraint_generator(sym_polynomial : sym.Poly,
-                             symbol_var_dict : Dict[sym.Symbol, cp.Variable],
+                             symbol_var_dict : Dict[sym.Symbol, picos.ComplexVariable],
                              matrix_name='Q',
                              variables=[]):
     # Setup dictionary of monomials to cvx coefficients for sym_polynomial
@@ -71,7 +80,7 @@ def PSD_constraint_generator(sym_polynomial : sym.Poly,
     vH_Q_v = sym.poly(vector_monomials.conj().T @ Q_SYM @ vector_monomials, variables)
 
     # Create cvx matrix and dictionary of monomials to cvx matrix terms
-    Q_CVX = cp.Variable((num_of_monom, num_of_monom), hermitian=True, name=matrix_name)
+    Q_CVX = picos.HermitianVariable(name=matrix_name, shape=(num_of_monom, num_of_monom))
     Q_cvx_coeffs = convert_exprs_of_matrix(vH_Q_v.coeffs(), Q_CVX)
     Q_monom_to_cvx = dict(zip(vH_Q_v.monoms(), Q_cvx_coeffs))
 

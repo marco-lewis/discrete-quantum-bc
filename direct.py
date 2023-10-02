@@ -57,13 +57,13 @@ def direct_method(unitary : np.ndarray,
 
     barrier_coeffs = [next(iter(coeff.free_symbols)) for coeff in barrier.coeffs()]
 
-    symbol_var_dict : Dict[sym.Symbol, cp.Variable]= {}
+    symbol_var_dict : Dict[sym.Symbol, picos.ComplexVariable]= {}
     for lam_symbols in lam_coeffs.values(): symbol_var_dict.update(symbols_to_cvx_var_dict(lam_symbols))
     symbol_var_dict.update(symbols_to_cvx_var_dict(barrier_coeffs))
 
     # 3. Get matrix polynomial and constraints
     cvx_constraints = []
-    cvx_matrices : List[cp.Variable] = []
+    cvx_matrices : List[picos.HermitianVariable] = []
 
     logger.info("Generating lam constraints...")
     for key in lams:
@@ -90,9 +90,11 @@ def direct_method(unitary : np.ndarray,
     logger.info("Constraints generated")
     logger.debug(cvx_constraints)
 
-    # 4. Solve using cvxpy
-    obj = cp.Minimize(0)
-    prob = cp.Problem(obj, cvx_constraints)
+    # 4. Solve using PICOS
+    prob = picos.Problem()
+    prob.minimize = picos.Constant(0)
+    for constraint in cvx_constraints: prob.add_constraint(constraint)
+
     logger.info("Solving problem...")
     prob.solve(verbose=bool(verbose))
     logger.info(prob.status)
