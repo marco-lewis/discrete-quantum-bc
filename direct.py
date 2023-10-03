@@ -1,8 +1,11 @@
+from log_settings import LoggerWriter
 from utils import *
 
 import logging
+import sys
 
 logger = logging.getLogger("direct")
+picos_logger = logging.getLogger("picos")
 
 def direct_method(unitary : np.ndarray,
                   g : Dict[str, List[sym.Poly]],
@@ -95,9 +98,13 @@ def direct_method(unitary : np.ndarray,
     prob.minimize = picos.Constant(0)
     for constraint in cvx_constraints: prob.add_constraint(constraint)
 
-    logger.info("Solving problem...")
+    picos_logger.info("Solving problem...")
+    sys.stdout = LoggerWriter(picos_logger.info)
+    sys.stderr = LoggerWriter(picos_logger.error)
     prob.solve(verbose=bool(verbose))
-    logger.info(prob.status)
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderror__
+    picos_logger.info(prob.status)
     if prob.status in ["infeasible", "unbounded"]:
         logging.error("Cannot get barrier from problem.")
         return sym.core.numbers.Infinity

@@ -11,3 +11,20 @@ def setup_logger(filename, log_level=logging.INFO):
     fh.setFormatter(formatter)
     logger.addHandler(fh)
     return logger
+
+# Source: https://stackoverflow.com/a/66209331/19768075
+class LoggerWriter:
+    def __init__(self, logger_func):
+        self.logger_func = logger_func
+        self.buffer = []
+
+    def write(self, msg : str):
+        if msg.endswith('\n'):
+            self.buffer.append(msg.removesuffix('\n'))
+            self.logger_func(''.join(self.buffer))
+            self.buffer = []
+        else:
+            self.buffer.append(msg)
+
+    def flush(self):
+        pass
