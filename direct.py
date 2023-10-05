@@ -103,7 +103,7 @@ def direct_method(unitary : np.ndarray,
     sys.stderr = LoggerWriter(picos_logger.error)
     prob.solve(verbose=bool(verbose))
     sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderror__
+    sys.stderr = sys.__stderr__
     picos_logger.info(prob.status)
     if prob.status in ["infeasible", "unbounded"]:
         logging.error("Cannot get barrier from problem.")
