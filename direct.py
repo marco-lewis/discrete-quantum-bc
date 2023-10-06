@@ -18,7 +18,7 @@ def direct_method(unitary : np.ndarray,
     logger.setLevel(log_level)
     
     variables = Z + [z.conjugate() for z in Z]
-    d = np.ceil(k * eps) + 1
+    d = calculate_d(k, eps)
     logger.info("Barrier degree: " + str(barrier_degree) + ", eps: " + str(eps) + ", k: " + str(k) + ", d: " + str(d))
 
     # 1. Generate lam, barrier
@@ -47,9 +47,8 @@ def direct_method(unitary : np.ndarray,
     for key in sym_poly_eq:
         if key == DIFF: sym_polys[key] = sym_poly_eq[key](barrier, unitary, lams, g)
         elif key == INDUCTIVE:
-            fk = unitary
-            for i in range(1,k): fk = np.dot(unitary, fk)
-            sym_polys[key] = sym_poly_eq[key](barrier, fk, lams, g)
+            unitary_k = generate_unitary_k(k, unitary)
+            sym_polys[key] = sym_poly_eq[key](barrier, unitary_k, lams, g)
         else: sym_polys[key] = sym_poly_eq[key](barrier, lams, g)
         logger.info("Polynomial for " + key + " made.")
     logger.info("Polynomials made.")
@@ -98,16 +97,17 @@ def direct_method(unitary : np.ndarray,
     prob.minimize = picos.Constant(0)
     for constraint in cvx_constraints: prob.add_constraint(constraint)
 
-    picos_logger.info("Solving problem...")
+    logger.info("Solving problem...")
     sys.stdout = LoggerWriter(picos_logger.info)
     sys.stderr = LoggerWriter(picos_logger.error)
     prob.solve(verbose=bool(verbose))
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
-    picos_logger.info(prob.status)
+    logger.info(prob.status)
     if prob.status in ["infeasible", "unbounded"]:
         logging.error("Cannot get barrier from problem.")
         return sym.core.numbers.Infinity
+    logger.info("Solution found.")
 
     # 5. Return the barrier in a readable format
     logger.info("Fetching values...")
@@ -115,11 +115,16 @@ def direct_method(unitary : np.ndarray,
     symbols = list(set(symbols))
     symbols.sort(key = lambda symbol: symbol.name)
     symbol_values = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
-    for key in symbol_values: symbol_values[key] = symbol_values[key] if abs(symbol_values[key]) > 1e-10 else 0
+    for key in symbol_values:
+        t = symbol_values[key].real if symbol_values[key].real > 1e-10 else 0
+        t += symbol_values[key].imag if symbol_values[key].imag > 1e-10 else 0
+        symbol_values[key] = t
     for key in lams:
         i = 0
         for lam in lams[key]:
             logger.debug("lam_" + str(key) + str(i), lam.subs(symbol_values))
             i += 1
     for m in cvx_matrices: logger.debug(m, m.value)
-    return barrier.subs(symbol_values)
+    barrier = barrier.subs(symbol_values)
+    logger.info("Barrier made.")
+    return barrier

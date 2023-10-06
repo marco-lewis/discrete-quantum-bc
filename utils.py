@@ -26,6 +26,14 @@ def multiply(xs):
     for x in xs: out = out * x
     return out
 
+def calculate_d(k = 1, eps = 0.01):
+    return (k + 1) * eps
+
+def generate_unitary_k(k, unitary):
+    unitary_k = unitary
+    for i in range(1,k): unitary_k = np.dot(unitary, unitary_k)
+    return unitary_k
+
 def to_poly(expr_list, variables, domain=sym.CC):
     return [sym.poly(l, variables, domain=domain) for l in expr_list]
 
