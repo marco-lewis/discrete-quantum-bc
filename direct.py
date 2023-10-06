@@ -122,9 +122,12 @@ def direct_method(unitary : np.ndarray,
     for key in lams:
         i = 0
         for lam in lams[key]:
-            logger.debug("lam_" + str(key) + str(i), lam.subs(symbol_values))
+            logger.debug("lam_" + str(key) + str(i))
+            logger.debug(lam.subs(symbol_values))
             i += 1
-    for m in cvx_matrices: logger.debug(m, m.value)
+    for m in cvx_matrices:
+        logger.debug(m.name)
+        logger.debug(m)
     barrier = barrier.subs(symbol_values)
     logger.info("Barrier made.")
     return barrier

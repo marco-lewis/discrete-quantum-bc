@@ -21,7 +21,6 @@ def check_barrier(barrier : sym.Poly,
     
     z3_barrier = _sympy_poly_to_z3(var_z3_dict, barrier)
     z3_diff = _sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, variables, domain=sym.CC))
-
     z3_k_diff = _sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary_k, Z))) - barrier, variables, domain=sym.CC))
 
     for key in constraints: constraints[key] = [_sympy_poly_to_z3(var_z3_dict, p).r >= 0 for p in constraints[key]]
