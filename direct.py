@@ -16,6 +16,7 @@ def direct_method(unitary : np.ndarray,
                   verbose=0,
                   log_level=logging.INFO):
     logger.setLevel(log_level)
+    picos_logger.setLevel(log_level)
     
     variables = Z + [z.conjugate() for z in Z]
     d = calculate_d(k, eps)
