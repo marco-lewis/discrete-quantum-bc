@@ -1,7 +1,6 @@
 from complex import Complex
 from utils import *
 
-from collections import defaultdict
 from functools import reduce
 import logging
 
@@ -13,7 +12,9 @@ def check_barrier(barrier : sym.Poly,
                   Z : List[sym.Symbol] = [],
                   unitary = np.eye(2,2),
                   k = 1,
-                  eps = 0.01):
+                  eps = 0.01,
+                  log_level = logging.INFO):
+    logger.setLevel(log_level)
     d = calculate_d(k, eps)
     unitary_k = generate_unitary_k(k, unitary)
     variables = Z + [z.conjugate() for z in Z]
@@ -28,9 +29,11 @@ def check_barrier(barrier : sym.Poly,
     def _check(s : z3.Solver, cond):
         s.push()
         s.add(cond)
+        logger.debug(str(s))
         sat = s.check()
         logger.info(sat)
-        if not(sat == z3.unsat):
+        if sat == z3.unknown: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate.")
+        if sat == z3.sat:
             m = s.model()
             s2 = z3.Solver()
             s2.add(Complex('barrier') == z3_barrier)
@@ -42,7 +45,7 @@ def check_barrier(barrier : sym.Poly,
     
     s = z3.Solver()
     logger.info("Barrier real")
-    _check(s, (z3.And(constraints[INVARIANT]), z3.Not(z3_barrier.i == 0)))
+    _check(s, (z3.And(constraints[INVARIANT]), z3.Not(z3.And(z3_barrier.i >= -1e-10, z3_barrier.i <= 1e-10))))
     logger.info("Check " + INIT)
     _check(s, (z3.And(constraints[INIT]), z3_barrier.r > 0))
     logger.info("Check " + UNSAFE)
