@@ -51,9 +51,9 @@ def check_barrier(barrier : sym.Poly,
     logger.info("Check " + UNSAFE)
     _check(s, (z3.And(constraints[UNSAFE]), z3_barrier.r < d))
     logger.info("Check " + DIFF)
-    _check(s, (z3.And(constraints[INVARIANT], z3_diff.r > eps)))
+    _check(s, (z3.And(constraints[INVARIANT]), z3_diff.r > eps))
     logger.info("Check " + INDUCTIVE)
-    _check(s, (z3.And(constraints[INVARIANT], z3_k_diff.r > 0)))
+    _check(s, (z3.And(constraints[INVARIANT]), z3_k_diff.r > 0))
 
 # Based on: https://stackoverflow.com/a/38980538/19768075
 def _sympy_poly_to_z3(var_map, e) -> z3.ExprRef:
