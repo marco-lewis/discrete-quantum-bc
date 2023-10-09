@@ -116,8 +116,8 @@ def direct_method(unitary : np.ndarray,
     symbols.sort(key = lambda symbol: symbol.name)
     symbol_values = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
     for key in symbol_values:
-        t = symbol_values[key].real if symbol_values[key].real > 1e-10 else 0
-        t += symbol_values[key].imag if symbol_values[key].imag > 1e-10 else 0
+        t = symbol_values[key].real if abs(symbol_values[key].real) > 1e-10 else 0
+        t += symbol_values[key].imag if abs(symbol_values[key].imag) > 1e-10 else 0
         symbol_values[key] = t
     for key in lams:
         i = 0
