@@ -31,7 +31,12 @@ def check_barrier(barrier : sym.Poly,
         sat = s.check()
         logger.info(sat)
         if not(sat == z3.unsat):
-            logger.error("Counter example: " + str(s.model()))
+            m = s.model()
+            s2 = z3.Solver()
+            s2.add(Complex('barrier') == z3_barrier)
+            for v in m: s2.add(v() == m[v()])
+            s2.check()
+            logger.error("Counter example: " + str(s2.model()))
             exit()
         s.pop()
     
