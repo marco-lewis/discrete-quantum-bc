@@ -7,6 +7,11 @@ import logging
 import z3
 
 logger = logging.getLogger("check")
+
+def raise_error(msg):
+    logger.error(msg)
+    exit()
+
 def check_barrier(barrier : sym.Poly,
                   constraints : Dict[str, List[sym.Poly]],
                   Z : List[sym.Symbol] = [],
@@ -39,8 +44,7 @@ def check_barrier(barrier : sym.Poly,
             s2.add(Complex('barrier') == z3_barrier)
             for v in m: s2.add(v() == m[v()])
             s2.check()
-            logger.error("Counter example: " + str(s2.model()))
-            exit()
+            raise_error("Counter example: " + str(s2.model()))
         s.pop()
     
     s = z3.Solver()
@@ -60,12 +64,12 @@ def check_barrier(barrier : sym.Poly,
 def _sympy_poly_to_z3(var_map, e) -> z3.ExprRef:
     rv = None
     if isinstance(e, sym.Poly): return _sympy_poly_to_z3(var_map, e.as_expr())
-    elif not isinstance(e, sym.Expr): raise RuntimeError("Expected sympy Expr: " + repr(e))
+    elif not isinstance(e, sym.Expr): raise_error("Expected sympy Expr: " + repr(e))
     if isinstance(e, sym.Symbol): rv = var_map[e]
     elif isinstance(e, sym.Number): rv = float(e)
     elif isinstance(e, sym.Mul): rv = reduce((lambda x, y: x * y), [_sympy_poly_to_z3(var_map, exp) for exp in e.args])
     elif isinstance(e, sym.Add): rv = sum([_sympy_poly_to_z3(var_map, exp) for exp in e.args])
     elif isinstance(e, sym.Pow): rv = _sympy_poly_to_z3(var_map, e.args[0]) ** _sympy_poly_to_z3(var_map, e.args[1])
     elif isinstance(e, sym.conjugate): rv = _sympy_poly_to_z3(var_map, e.args[0]).conj()
-    if rv is None: raise Exception(repr(e), type(e))
+    if rv is None: raise_error("Unable to handle input " + repr(e) + " (" + str(type(e)) + ")")
     return rv
