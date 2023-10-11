@@ -36,7 +36,7 @@ def direct_method(unitary : np.ndarray,
     logger.info("Barrier made.")
     logger.debug(barrier)
 
-    # 2. Make arbitrary polynomials for SOS terms
+    # 2. Make arbitrary polynomials for HSOS terms
     sym_poly_eq = dict([
         (INIT,lambda B, lams, g: sym.poly(-B - np.dot(lams[INIT], g[INIT]), variables)),
         (UNSAFE,lambda B, lams, g: sym.poly(B - d - np.dot(lams[UNSAFE], g[UNSAFE]), variables)),
@@ -64,7 +64,7 @@ def direct_method(unitary : np.ndarray,
     for lam_symbols in lam_coeffs.values(): symbol_var_dict.update(symbols_to_cvx_var_dict(lam_symbols))
     symbol_var_dict.update(symbols_to_cvx_var_dict(barrier_coeffs))
 
-    # 3. Get matrix polynomial and constraints
+    # 3. Get matrix polynomial and constraints for semidefinite format
     cvx_constraints = []
     cvx_matrices : List[picos.HermitianVariable] = []
 

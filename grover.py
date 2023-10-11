@@ -57,7 +57,6 @@ g_init += [
     ]
 g_init = to_poly(g_init, variables)
 
-
 g_inv = [
     1 - sum_probs,
     sum_probs - 1,
@@ -77,7 +76,7 @@ k = 2
 
 barrier = direct_method(unitary, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level)
 logger.info("Barrier: " +  str(barrier))
-with open("logs/barrier.log", 'w') as file:
+with open("logs/barrier_" + __file__ + ".log", 'w') as file:
     file.write(repr(barrier))
 logger.info("Barrier stored")
-if not(barrier == sym.core.numbers.Infinity): check_barrier(barrier, g, Z=Z, unitary=unitary)
+if not(barrier == sym.core.numbers.Infinity): check_barrier(barrier, g, Z=Z, unitary=unitary, k=k, eps=eps)
