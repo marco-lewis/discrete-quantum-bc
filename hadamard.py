@@ -9,17 +9,20 @@ import os
 import numpy as np
 import sympy as sym
 
-
-log_level=logging.INFO
-logger = setup_logger("grover.log", log_level=log_level)
-verbose = 1
-
+# 0. Inputs, variable definitions and constants
 n = 1
 N = 2**n
+eps = 0.01
+barrier_degree = 2
+k = 2
 
-# 0. Inputs, variable definitions and constants
+log_level=logging.INFO
+logger = setup_logger("grover" + str(n) + ".log", log_level=log_level)
+verbose = 1
+
 hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 unitary = hadamard
+for i in range(1, n): unitary = np.kron(unitary, hadamard)
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
@@ -41,7 +44,6 @@ g_init += [
     ]
 g_init = to_poly(g_init, variables)
 
-
 g_inv = [
     1 - sum_probs,
     sum_probs - 1,
@@ -55,13 +57,8 @@ g[INVARIANT] = g_inv
 logger.info("g defined")
 logger.debug(g)
 
-eps = 0.01
-barrier_degree = 2
-k = 2
-
 barrier = direct_method(unitary, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level)
 logger.info("Barrier: " +  str(barrier))
-with open("logs/barrier_" + os.path.basename(__file__)[:-3] + ".log", 'w') as file:
+with open("logs/barrier_" + os.path.basename(__file__)[:-3] + str(n) + ".log", 'w') as file:
     file.write(repr(barrier))
 logger.info("Barrier stored")
-if not(barrier == sym.core.numbers.Infinity): check_barrier(barrier, g, Z=Z, unitary=unitary, k=k, eps=eps, log_level=log_level)
