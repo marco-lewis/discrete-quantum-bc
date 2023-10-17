@@ -1,4 +1,3 @@
-from check import check_barrier
 from direct import direct_method
 from log_settings import setup_logger
 from utils import *
@@ -17,7 +16,7 @@ barrier_degree = 2
 k = 2
 
 log_level=logging.INFO
-logger = setup_logger("grover" + str(n) + ".log", log_level=log_level)
+logger = setup_logger("hadamard" + str(n) + ".log", log_level=log_level)
 verbose = 1
 
 hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))

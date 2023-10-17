@@ -1,22 +1,24 @@
-from check import check_barrier
 from direct import direct_method
 from log_settings import setup_logger
 from utils import *
 
+import logging
+
 import numpy as np
 import sympy as sym
 
-import logging
-
-log_level=logging.INFO
-logger = setup_logger("grover.log", log_level=log_level)
-verbose = 1
-
+# 0. Inputs, variable definitions and constants
 n = 2
 mark = 2
 N = 2**n
+eps = 0.01
+barrier_degree = 2
+k = 2
 
-# 0. Inputs, variable definitions and constants
+log_level=logging.INFO
+logger = setup_logger("grover" + str(n) + "_" + "m" + str(mark) + ".log", log_level=log_level)
+verbose = 1
+
 oracle = np.eye(N, N)
 oracle[mark, mark] = -1
 diffusion_oracle = np.eye(N,N)
@@ -70,13 +72,8 @@ g[INVARIANT] = g_inv
 logger.info("g defined")
 logger.debug(g)
 
-eps = 0.1
-barrier_degree=2
-k = 2
-
 barrier = direct_method(unitary, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level)
 logger.info("Barrier: " +  str(barrier))
 with open("logs/barrier_" + __file__ + ".log", 'w') as file:
     file.write(repr(barrier))
 logger.info("Barrier stored")
-if not(barrier == sym.core.numbers.Infinity): check_barrier(barrier, g, Z=Z, unitary=unitary, k=k, eps=eps)
