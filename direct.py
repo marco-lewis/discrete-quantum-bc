@@ -22,7 +22,6 @@ def direct_method(circuit : List[np.ndarray],
     
     variables = Z + [z.conjugate() for z in Z]
     d = calculate_d(k, eps)
-    # unitaries = list(map(np.ndarray, set(map(tuple, circuit))))
     unitaries = np.unique(circuit, axis=0)
     logger.info("Barrier degree: " + str(barrier_degree) + ", eps: " + str(eps) + ", k: " + str(k) + ", d: " + str(d))
 
@@ -66,12 +65,15 @@ def direct_method(circuit : List[np.ndarray],
     lams[INDUCTIVE] = []
     sym_polys[INDUCTIVE] = []
     u = 0
+    circuit_chunks = []
     for circuit_chunk in grouper(circuit, k):
-        uk = circuit_chunk[0]
-        for unitary in circuit_chunk[1:]: uk = np.dot(unitary, uk)
+        unitary_k = circuit_chunk[0]
+        for unitary in circuit_chunk[1:]: unitary_k = np.dot(unitary, unitary_k)
+        if not circuit_chunks or any((unitary_k == chunk).all() for chunk in circuit_chunks): circuit_chunks.append(unitary_k)
+    for circuit_chunk in circuit_chunks:
         lam = [create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + INDUCTIVE + str(u) +';' + str(i)) for i in range(len(g[INVARIANT]))]
         lams[INDUCTIVE].append(lam)
-        sym_polys[INDUCTIVE].append(sym_poly_eq[INDUCTIVE](barrier, uk, lam, g))
+        sym_polys[INDUCTIVE].append(sym_poly_eq[INDUCTIVE](barrier, unitary_k, lam, g))
         u += 1
     logger.info("Polynomials for " + INDUCTIVE + " made.")
     logger.info("Polynomials made.")
