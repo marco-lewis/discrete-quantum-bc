@@ -13,7 +13,7 @@ n = 1
 N = 2**n
 eps = 0.01
 barrier_degree = 2
-k = 2
+k = 1
 
 log_level=logging.INFO
 logger = setup_logger("hadamard" + str(n) + ".log", log_level=log_level)
@@ -22,6 +22,7 @@ verbose = 1
 hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 unitary = hadamard
 for i in range(1, n): unitary = np.kron(unitary, hadamard)
+circuit = [unitary] * 6
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
@@ -56,7 +57,7 @@ g[INVARIANT] = g_inv
 logger.info("g defined")
 logger.debug(g)
 
-barrier = direct_method(unitary, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level)
+barrier = direct_method(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level)
 logger.info("Barrier: " +  str(barrier))
 with open("logs/barrier_" + os.path.basename(__file__)[:-3] + str(n) + ".log", 'w') as file:
     file.write(repr(barrier))
