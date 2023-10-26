@@ -21,11 +21,6 @@ INDUCTIVE = 'inductive'
 
 def flatten(matrix): return [item for row in matrix for item in row]
 
-def multiply(xs):
-    out = 1
-    for x in xs: out = out * x
-    return out
-
 def calculate_d(k = 1, eps = 0.01):
     return (k + 1) * eps
 
@@ -60,7 +55,7 @@ def convert_exprs(exprs : List[sym.Poly], symbol_var_dict : Dict[sym.Symbol, pic
         if isinstance(expr, sym.Mul): return reduce(lambda x, y: x * y, [convert(arg) for arg in expr.args])
         if isinstance(expr, sym.Pow): return convert(expr.args[0])**convert(expr.args[1])
         if symbol_var_dict.get(expr) is not None: return symbol_var_dict[expr]
-        return float(expr)
+        return complex(expr)
     return [convert(expr) for expr in exprs]
 
 def convert_exprs_of_matrix(exprs : List[sym.Poly], cvx_matrix : picos.HermitianVariable):
@@ -68,7 +63,7 @@ def convert_exprs_of_matrix(exprs : List[sym.Poly], cvx_matrix : picos.Hermitian
         if isinstance(expr, sym.Add): return picos.sum([convert(arg) for arg in expr.args])
         if isinstance(expr, sym.Mul): return reduce(lambda x, y: x * y, [convert(arg) for arg in expr.args], 1)
         if isinstance(expr, MatrixElement): return cvx_matrix[int(expr.i), int(expr.j)]
-        return float(expr)
+        return complex(expr)
     return [convert(expr) for expr in exprs]
 
 def PSD_constraint_generator(sym_polynomial : sym.Poly,
