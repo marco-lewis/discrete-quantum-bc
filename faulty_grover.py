@@ -16,7 +16,7 @@ barrier_degree = 2
 k = 2
 
 log_level=logging.INFO
-logger = setup_logger("grover" + str(n) + "_" + "m" + str(mark) + ".log", log_level=log_level)
+logger = setup_logger("faultygrover" + str(n) + "_" + "m" + str(mark) + ".log", log_level=log_level)
 verbose = 1
 
 oracle = np.eye(N, N)
@@ -28,8 +28,9 @@ diffusion_oracle = 2*temp - diffusion_oracle
 
 hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 hadamard_n = lambda n: hadamard if n == 1 else np.kron(hadamard, hadamard_n(n-1))
+diffusion_step = np.dot(np.kron(hadamard_n(n-1),np.eye(2,2)), np.dot(diffusion_oracle, hadamard_n(n)))
 faulty_grover = np.dot(np.dot(np.kron(hadamard_n(n-1),np.eye(2,2)), np.dot(diffusion_oracle, hadamard_n(n))), oracle)
-circuit = [oracle, np.kron(hadamard_n(n-1),np.eye(2,2)), diffusion_oracle, hadamard_n(n)]
+circuit = [oracle, diffusion_step]
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
