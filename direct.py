@@ -39,7 +39,7 @@ def direct_method(circuit : List[np.ndarray],
     logger.info("Barrier made.")
     logger.debug(barrier)
 
-    logger.info("Making HSOS...")
+    logger.info("Making HSOS polynomials...")
     # 1a. Initial condition
     lams[INIT] = [[create_polynomial(variables, deg=g[INIT][i].total_degree(), coeff_tok='s_' + INIT + str(i)+';') for i in range(len(g[INIT]))]]
     sym_polys[INIT] = [sym_poly_eq[INIT](barrier, lams[INIT][0], g)]
@@ -64,19 +64,19 @@ def direct_method(circuit : List[np.ndarray],
     # 1d. Inductive conditions
     lams[INDUCTIVE] = []
     sym_polys[INDUCTIVE] = []
-    u = 0
     circuit_chunks = []
     for circuit_chunk in grouper(circuit, k):
         unitary_k = circuit_chunk[0]
         for unitary in circuit_chunk[1:]: unitary_k = np.dot(unitary, unitary_k)
-        if not circuit_chunks or any((unitary_k == chunk).all() for chunk in circuit_chunks): circuit_chunks.append(unitary_k)
+        circuit_chunks.append(unitary_k)
+    u = 0
     for circuit_chunk in circuit_chunks:
         lam = [create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + INDUCTIVE + str(u) +';' + str(i)) for i in range(len(g[INVARIANT]))]
         lams[INDUCTIVE].append(lam)
         sym_polys[INDUCTIVE].append(sym_poly_eq[INDUCTIVE](barrier, unitary_k, lam, g))
         u += 1
     logger.info("Polynomials for " + INDUCTIVE + " made.")
-    logger.info("Polynomials made.")
+    logger.info("HSOS polynomials made.")
     logger.debug(sym_polys)
 
     # 2. Get coefficients out to make symbol dictionary
