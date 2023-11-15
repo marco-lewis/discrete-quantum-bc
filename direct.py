@@ -128,6 +128,9 @@ def direct_method(circuit : List[np.ndarray],
     cvx_constraints += [M >> 0 for M in cvx_matrices]
     logger.info("Semidefinite constraints generated.")
     logger.info("Constraints generated")
+    logger.info("Number of matrices: " + str(len(cvx_matrices)))
+    for M in cvx_matrices: logger.debug(M.name + ": " + str(M.shape))
+    logger.info("Number of constraitns: " + str(len(cvx_constraints)))
     logger.debug(cvx_constraints)
 
     # 4. Solve using PICOS
@@ -138,7 +141,7 @@ def direct_method(circuit : List[np.ndarray],
     logger.info("Solving problem...")
     sys.stdout = LoggerWriter(picos_logger.info)
     sys.stderr = LoggerWriter(picos_logger.error)
-    prob.solve(verbose=bool(verbose))
+    prob.solve(verbose=bool(verbose),solver='mosek')
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
     logger.info(prob.status)
