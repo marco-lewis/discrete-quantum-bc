@@ -16,7 +16,8 @@ def direct_method(circuit : List[np.ndarray],
                   eps=0.01,
                   k=1,
                   verbose=0,
-                  log_level=logging.INFO):
+                  log_level=logging.INFO,
+                  solver='MOSEK'):
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
     
@@ -141,7 +142,7 @@ def direct_method(circuit : List[np.ndarray],
     logger.info("Solving problem...")
     sys.stdout = LoggerWriter(picos_logger.info)
     sys.stderr = LoggerWriter(picos_logger.error)
-    prob.solve(verbose=bool(verbose))
+    prob.solve(verbose=bool(verbose), solver=solver)
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
     logger.info("Problem status: " + prob.status)
