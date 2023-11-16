@@ -141,11 +141,11 @@ def direct_method(circuit : List[np.ndarray],
     logger.info("Solving problem...")
     sys.stdout = LoggerWriter(picos_logger.info)
     sys.stderr = LoggerWriter(picos_logger.error)
-    prob.solve(verbose=bool(verbose),solver='mosek')
+    prob.solve(verbose=bool(verbose))
     sys.stdout = sys.__stdout__
     sys.stderr = sys.__stderr__
-    logger.info(prob.status)
-    if prob.status in ["infeasible", "unbounded"]:
+    logger.info("Problem status: " + prob.status)
+    if "infeasible" in prob.status or "unbounded" in prob.status:
         logging.error("Cannot get barrier from problem.")
         return sym.core.numbers.Infinity
     logger.info("Solution found.")
@@ -157,8 +157,13 @@ def direct_method(circuit : List[np.ndarray],
     symbols.sort(key = lambda symbol: symbol.name)
     symbol_values = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
     for key in symbol_values:
-        t = symbol_values[key].real if abs(symbol_values[key].real) > 1e-10 else 0
-        t += symbol_values[key].imag if abs(symbol_values[key].imag) > 1e-10 else 0
+        if not(symbol_values[key]): t = 0 
+        else:
+            try:
+                t = symbol_values[key].real if abs(symbol_values[key].real) > 1e-10 else 0
+                t += symbol_values[key].imag if abs(symbol_values[key].imag) > 1e-10 else 0
+            except:
+                t = symbol_values[key] if abs(symbol_values[key]) > 1e-10 else 0
         symbol_values[key] = t
     for key in lams:
         for ls in lams[key]:
