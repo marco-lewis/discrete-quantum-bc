@@ -15,14 +15,12 @@ barrier_degree = 2
 k = 1
 
 log_level=logging.INFO
-file_tag = "hadamard" + str(n) + "k" + str(k)
+file_tag = "cnot_k" + str(k)
 logger = setup_logger(file_tag + ".log", log_level=log_level)
 verbose = 1
 
-hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
-unitary = hadamard
-for i in range(1, n): unitary = np.kron(unitary, hadamard)
-circuit = [unitary] * 6
+cnot = np.array([[1.0,0,0,0],[0,1.0,0,0],[0,0,0,1.0],[0,0,1.0,0]])
+circuit = [cnot] * 6
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
@@ -30,15 +28,14 @@ variables = Z + [z.conjugate() for z in Z]
 sum_probs = np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)])
 
 g_u = [
-    Z[1] * sym.conjugate(Z[1]) - 0.9,
+    Z[1] * sym.conjugate(Z[1]) + Z[0] * sym.conjugate(Z[0]) - 0.9,
     1 - sum_probs,
     sum_probs - 1,
 ]
 g_u = to_poly(g_u, variables)
 
-g_init = []
-g_init += [
-    Z[0] * sym.conjugate(Z[0]) - 0.9,
+g_init = [
+    Z[3] * sym.conjugate(Z[3]) - 0.9,
     1 - sum_probs,
     sum_probs - 1,
     ]
