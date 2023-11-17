@@ -17,7 +17,7 @@ def direct_method(circuit : List[np.ndarray],
                   k=1,
                   verbose=0,
                   log_level=logging.INFO,
-                  solver='MOSEK'):
+                  solver='mosek'):
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
     
