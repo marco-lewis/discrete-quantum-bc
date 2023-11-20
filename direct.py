@@ -17,6 +17,7 @@ def direct_method(circuit : List[np.ndarray],
                   k=1,
                   verbose=0,
                   log_level=logging.INFO,
+                  precision_bound=1e-10,
                   solver='mosek'):
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
@@ -161,10 +162,10 @@ def direct_method(circuit : List[np.ndarray],
         if not(symbol_values[key]): t = 0 
         else:
             try:
-                t = symbol_values[key].real if abs(symbol_values[key].real) > 1e-10 else 0
-                t += symbol_values[key].imag if abs(symbol_values[key].imag) > 1e-10 else 0
+                t = symbol_values[key].real if abs(symbol_values[key].real) > precision_bound else 0
+                t += symbol_values[key].imag if abs(symbol_values[key].imag) > precision_bound else 0
             except:
-                t = symbol_values[key] if abs(symbol_values[key]) > 1e-10 else 0
+                t = symbol_values[key] if abs(symbol_values[key]) > precision_bound else 0
         symbol_values[key] = t
     for key in lams:
         for ls in lams[key]:
