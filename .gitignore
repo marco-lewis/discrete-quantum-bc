@@ -1,3 +1,4 @@
 __pycache__/*
 discrete/
 logs/*.log
+.vscode/*
