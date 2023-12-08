@@ -13,10 +13,11 @@ mark = 2
 N = 2**n
 eps = 0.01
 barrier_degree = 2
-k = 2
+k = 1
 
 log_level=logging.INFO
-logger = setup_logger("faultygrover" + str(n) + "_" + "m" + str(mark) + ".log", log_level=log_level)
+file_tag = "faultygrover" + str(n) + "_" + "m" + str(mark)
+logger = setup_logger(file_tag + ".log", log_level=log_level)
 verbose = 1
 
 oracle = np.eye(N, N)
@@ -30,7 +31,8 @@ hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 hadamard_n = lambda n: hadamard if n == 1 else np.kron(hadamard, hadamard_n(n-1))
 diffusion_step = np.dot(np.kron(hadamard_n(n-1),np.eye(2,2)), np.dot(diffusion_oracle, hadamard_n(n)))
 faulty_grover = np.dot(np.dot(np.kron(hadamard_n(n-1),np.eye(2,2)), np.dot(diffusion_oracle, hadamard_n(n))), oracle)
-circuit = [oracle, diffusion_step]
+circuit = [hadamard_n(n), oracle, diffusion_step]
+circuit = [np.dot(diffusion_step, oracle)]
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
@@ -44,11 +46,12 @@ g_u = [
 ]
 g_u = to_poly(g_u, variables)
 
-d = 0.01
-g_init = [z * sym.conjugate(z) - (1/N - d) for z in Z]
-g_init += [1/N + d - z * sym.conjugate(z) for z in Z]
+d = 0.001
+g_init = []
+g_init += [z * sym.conjugate(z) - (1/N - d) for z in Z]
+g_init += [(1/N + d) - z * sym.conjugate(z) for z in Z]
 g_init += [-1j * (z - sym.conjugate(z)) for z in Z]
-g_init += [1j * (z - sym.conjugate(z)) for z in Z]
+g_init += [ 1j * (z - sym.conjugate(z)) for z in Z]
 g_init += [
     1 - sum_probs,
     sum_probs - 1,
@@ -68,8 +71,8 @@ g[INVARIANT] = g_inv
 logger.info("g defined")
 logger.debug(g)
 
-barrier = direct_method(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level)
+barrier = direct_method(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level, solver='cvxopt')
 logger.info("Barrier: " +  str(barrier))
-with open("logs/barrier_" + __file__ + ".log", 'w') as file:
+with open("logs/barrier_" + file_tag + ".log", 'w') as file:
     file.write(repr(barrier))
 logger.info("Barrier stored")
