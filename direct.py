@@ -14,72 +14,103 @@ def direct_method(circuit : List[np.ndarray],
                   Z : List[sym.Symbol],
                   barrier_degree=2,
                   eps=0.01,
+                  gamma=0.01,
                   k=1,
                   verbose=0,
                   log_level=logging.INFO,
                   precision_bound=1e-10,
-                  solver='mosek'):
+                  solver='mosek',):
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
     
     variables = Z + [z.conjugate() for z in Z]
-    d = calculate_d(k, eps)
-    unitaries = np.unique(circuit, axis=0)
-    logger.info("Barrier degree: " + str(barrier_degree) + ", eps: " + str(eps) + ", k: " + str(k) + ", d: " + str(d))
+    d = calculate_d(k, eps, gamma)
+    unitaries : List[np.ndarray] = list(np.unique(circuit, axis=0))
+    unitary_idxs = []
+    for c in circuit:
+        for ui in range(len(unitaries)):
+            if np.array_equal(unitaries[ui], c):
+                unitary_idxs.append(ui) 
+                break
+    logger.info("Barrier degree: " + str(barrier_degree) +
+                ", k: " + str(k) +
+                ", eps: " + str(eps) +
+                ", gamma: " + str(gamma) +
+                ", d: " + str(d))
 
     # 1. Make polynomials
-    lams : Dict(str, sym.Poly) = {}
-    sym_polys = {}
+    lams : Dict(str, List(sym.Poly)) = {}
+    sym_polys : Dict(str, List(sym.Poly)) = {}
     sym_poly_eq = dict([
-        (INIT,lambda B, lams, g: sym.poly(-B - np.dot(lams, g[INIT]), variables)),
-        (UNSAFE,lambda B, lams, g: sym.poly(B - d - np.dot(lams, g[UNSAFE]), variables)),
-        (DIFF,lambda B, f, lams, g: sym.poly(-B.subs(zip(Z, np.dot(f, Z))) + B - np.dot(lams, g[INVARIANT]) + eps, variables)),
-        (INDUCTIVE,lambda B, fk, lams, g: sym.poly(-B.subs(zip(Z, np.dot(fk, Z)))) + B - np.dot(lams, g[INVARIANT])),
+        (INIT,lambda B, lam, g: sym.poly(-B - np.dot(lam, g[INIT]), variables)),
+        (UNSAFE,lambda B, lam, g: sym.poly(B - d - np.dot(lam, g[UNSAFE]), variables)),
+        (DIFF,lambda B, f, lam, g: sym.poly(-B.subs(zip(Z, np.dot(f, Z))) + B - np.dot(lam, g[INVARIANT]) + eps, variables)),
+        (CHANGE, lambda B, Bnext, lam, g: sym.poly(-Bnext + B - np.dot(lam, g[INVARIANT]) + gamma, variables)),
+        (INDUCTIVE,lambda B, Bk, fk, lam, g: sym.poly(-Bk.subs(zip(Z, np.dot(fk, Z))) + B - np.dot(lam, g[INVARIANT]), variables)),
         ])
     
-    barrier = create_polynomial(variables, deg=barrier_degree, coeff_tok='b')
-    logger.info("Barrier made.")
-    logger.debug(barrier)
+    barriers : List(sym.Poly) = [create_polynomial(variables, deg=barrier_degree, coeff_tok='b' + str(j) + '_') for j in range(len(unitaries))]
+    logger.info("Barriers made.")
+    logger.debug(barriers)
 
     logger.info("Making HSOS polynomials...")
     # 1a. Initial condition
-    lams[INIT] = [[create_polynomial(variables, deg=g[INIT][i].total_degree(), coeff_tok='s_' + INIT + str(i)+';') for i in range(len(g[INIT]))]]
-    sym_polys[INIT] = [sym_poly_eq[INIT](barrier, lams[INIT][0], g)]
+    lams[INIT] = [[create_polynomial(variables, deg=g[INIT][i].total_degree(), coeff_tok='s_' + INIT + ';' + str(i) + 'c') for i in range(len(g[INIT]))]]
+    sym_polys[INIT] = [sym_poly_eq[INIT](barriers[0], lams[INIT][0], g)]
     logger.info("Polynomial for " + INIT + " made.")
+    logger.debug(sym_polys[INIT])
 
-    # 1b. Unsafe condition
-    lams[UNSAFE] = [[create_polynomial(variables, deg=g[UNSAFE][i].total_degree(), coeff_tok='s_' + UNSAFE + str(i)+';') for i in range(len(g[UNSAFE]))]]
-    sym_polys[UNSAFE] = [sym_poly_eq[UNSAFE](barrier, lams[UNSAFE][0], g)]
+    # 1b. Unsafe conditions
+    lams[UNSAFE] = [[create_polynomial(variables, deg=g[UNSAFE][i].total_degree(), coeff_tok='s_' + UNSAFE + str(j) + ';' + str(i) + 'c') for i in range(len(g[UNSAFE]))] for j in range(len(unitaries))]
+    sym_polys[UNSAFE] = [sym_poly_eq[UNSAFE](barriers[j], lams[UNSAFE][j], g) for j in range(len(unitaries))]
     logger.info("Polynomial for " + UNSAFE + " made.")
+    logger.debug(sym_polys[UNSAFE])
 
     # 1c. Diff conditions
-    lams[INVARIANT] = []
-    sym_polys[DIFF] = []
-    u = 0
-    for unitary in unitaries:
-        lam = [create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + INVARIANT + str(u) +';' + str(i)) for i in range(len(g[INVARIANT]))]
-        lams[INVARIANT].append(lam)
-        sym_polys[DIFF].append(sym_poly_eq[DIFF](barrier, unitary, lam, g))
-        u += 1
+    lams[INVARIANT] = [[create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + INVARIANT + str(j) +';' + str(i) + 'c') for i in range(len(g[INVARIANT]))] for j in range(len(unitaries))]
+    sym_polys[DIFF] = [sym_poly_eq[DIFF](barriers[j], unitaries[j], lams[INVARIANT][j], g) for j in range(len(unitaries))]
     logger.info("Polynomials for " + DIFF + " made.")
+    logger.debug(sym_polys[DIFF])
 
-    # 1d. Inductive conditions
+    # 1d. Change conditions
+    idx_pairs = []
+    lams[CHANGE] = []
+    sym_polys[CHANGE] = []
+    # Iterate through circuit
+    for i in range(len(circuit)-1):
+        # Fetch next item in circuit and match with respective index in unitaries
+        idx = unitary_idxs[i]
+        next_idx = unitary_idxs[i+1]
+        # Check if matched already
+        if (idx, next_idx) not in idx_pairs:
+            # If not add to sym_polys[CHANGE] with respective barriers
+            lam = [create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + CHANGE + str(idx) + "," + str(next_idx) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))]
+            lams[CHANGE].append(lam)
+            sym_polys[CHANGE].append(sym_poly_eq[CHANGE](barriers[idx], barriers[next_idx], lam, g))
+            idx_pairs.append((idx, next_idx))
+    logger.info("Polynomials for " + CHANGE + " made.")
+    logger.debug(sym_polys[CHANGE])
+
+    # 1e. Inductive conditions
     lams[INDUCTIVE] = []
     sym_polys[INDUCTIVE] = []
-    circuit_chunks = []
+    chunks = []
     for circuit_chunk in grouper(circuit, k):
         unitary_k = circuit_chunk[0]
         for unitary in circuit_chunk[1:]: unitary_k = np.dot(unitary, unitary_k)
-        circuit_chunks.append(unitary_k)
-    u = 0
-    for circuit_chunk in circuit_chunks:
-        lam = [create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + INDUCTIVE + str(u) +';' + str(i)) for i in range(len(g[INVARIANT]))]
+        us = [u.tolist() for u in unitaries]
+        chunks.append((unitary_k, us.index(circuit_chunk[0].tolist()), us.index(circuit_chunk[-1].tolist())))
+        # chunks.append((unitary_k, unitaries.index(circuit_chunk[0]), unitaries.index(circuit_chunk[-1])))
+
+    chunk_id = 0
+    for unitary_k, fst_idx, last_idx in chunks:
+        lam = [create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + INDUCTIVE + str(chunk_id) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))]
         lams[INDUCTIVE].append(lam)
-        sym_polys[INDUCTIVE].append(sym_poly_eq[INDUCTIVE](barrier, unitary_k, lam, g))
-        u += 1
+        sym_polys[INDUCTIVE].append(sym_poly_eq[INDUCTIVE](barriers[fst_idx], barriers[last_idx], unitary_k, lam, g))
+        chunk_id += 1
     logger.info("Polynomials for " + INDUCTIVE + " made.")
+    logger.debug(sym_polys[INDUCTIVE])
     logger.info("HSOS polynomials made.")
-    logger.debug(sym_polys)
 
     # 2. Get coefficients out to make symbol dictionary
     logger.info("Fetching coefficients.")
@@ -89,7 +120,8 @@ def direct_method(circuit : List[np.ndarray],
         for lam in lams[key]:
             lam_coeffs[key] += flatten([[next(iter(coeff.free_symbols)) for coeff in l.coeffs()] for l in lam])
 
-    barrier_coeffs = [next(iter(coeff.free_symbols)) for coeff in barrier.coeffs()]
+    barrier_coeffs = []
+    for barrier in barriers: barrier_coeffs += [next(iter(coeff.free_symbols)) for coeff in barrier.coeffs()]
 
     symbol_var_dict : Dict[sym.Symbol, picos.ComplexVariable]= {}
     for lam_symbols in lam_coeffs.values(): symbol_var_dict.update(symbols_to_cvx_var_dict(lam_symbols))
@@ -167,13 +199,10 @@ def direct_method(circuit : List[np.ndarray],
             except:
                 t = symbol_values[key] if abs(symbol_values[key]) > precision_bound else 0
         symbol_values[key] = t
-    for key in lams:
-        for ls in lams[key]:
-            for l in ls:
-                logger.debug(l.subs(symbol_values))
+    [[[logger.debug(l.subs(symbol_values)) for l in ls] for ls in lams[key]] for key in lams]
     for m in cvx_matrices:
         logger.debug(m.name)
         logger.debug(m)
-    barrier = barrier.subs(symbol_values)
-    logger.info("Barrier made.")
-    return barrier
+    barriers = [barrier.subs(symbol_values) for barrier in barriers]
+    logger.info("Barriers made.")
+    return barriers

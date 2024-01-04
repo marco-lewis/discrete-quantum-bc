@@ -18,11 +18,12 @@ BARRIER = 'barrier'
 DIFF = 'diff'
 LOC = 'loc'
 INDUCTIVE = 'inductive'
+CHANGE = 'change'
 
 def flatten(matrix): return [item for row in matrix for item in row]
 
-def calculate_d(k = 1, eps = 0.01):
-    return (k + 1) * eps
+def calculate_d(k = 1, eps = 0.01, gamma = 0):
+    return (k + 1) * (eps + gamma)
 
 def generate_unitary_k(k, unitary):
     unitary_k = unitary
