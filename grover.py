@@ -71,8 +71,8 @@ g[INVARIANT] = g_inv
 logger.info("g defined")
 logger.debug(g)
 
-barrier = direct_method(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level, solver='cvxopt')
-logger.info("Barrier: " +  str(barrier))
-with open("logs/barrier_" + file_tag + ".log", 'w') as file:
+barrier = direct_method(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level, precision_bound=1e-4, solver='cvxopt')
+logger.info("Barriers: " +  str(barrier))
+with open("logs/barriers_" + file_tag + ".log", 'w') as file:
     file.write(repr(barrier))
-logger.info("Barrier stored")
+logger.info("Barriers stored")

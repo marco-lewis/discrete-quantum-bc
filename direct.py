@@ -204,5 +204,6 @@ def direct_method(circuit : List[np.ndarray],
         logger.debug(m.name)
         logger.debug(m)
     barriers = [barrier.subs(symbol_values) for barrier in barriers]
+    barriers = list(zip(unitaries, barriers))
     logger.info("Barriers made.")
     return barriers
