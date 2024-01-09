@@ -16,7 +16,7 @@ barrier_degree = 2
 k = 1
 
 log_level=logging.INFO
-file_tag = "faultygrover" + str(n) + "_" + "m" + str(mark)
+file_tag = "grover_faulty" + str(n) + "_" + "m" + str(mark)
 logger = setup_logger(file_tag + ".log", log_level=log_level)
 verbose = 1
 
@@ -29,16 +29,16 @@ diffusion_oracle = 2*temp - diffusion_oracle
 
 hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 hadamard_n = lambda n: hadamard if n == 1 else np.kron(hadamard, hadamard_n(n-1))
-diffusion_step = np.dot(np.kron(hadamard_n(n-1),np.eye(2,2)), np.dot(diffusion_oracle, hadamard_n(n)))
-faulty_grover = np.dot(np.dot(np.kron(hadamard_n(n-1),np.eye(2,2)), np.dot(diffusion_oracle, hadamard_n(n))), oracle)
-circuit = [hadamard_n(n), oracle, diffusion_step]
-circuit = [np.dot(diffusion_step, oracle)]
+diffusion_faulty = np.dot(np.kron(hadamard_n(n-1),np.eye(2,2)), np.dot(diffusion_oracle, hadamard_n(n)))
+faulty_grover = np.dot(diffusion_faulty, oracle)
+circuit = [oracle, diffusion_faulty]
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
 
 sum_probs = np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)])
 
+# Marked state will never reach close to 1 (>90%)
 g_u = [
     Z[mark] * sym.conjugate(Z[mark]) - 0.9,
     1 - sum_probs,
@@ -46,6 +46,7 @@ g_u = [
 ]
 g_u = to_poly(g_u, variables)
 
+# Start close to superposition
 d = 0.001
 g_init = []
 g_init += [z * sym.conjugate(z) - (1/N - d) for z in Z]
@@ -71,8 +72,8 @@ g[INVARIANT] = g_inv
 logger.info("g defined")
 logger.debug(g)
 
-barrier = direct_method(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level, solver='cvxopt')
-logger.info("Barrier: " +  str(barrier))
+barrier = direct_method(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level, precision_bound=1e-4, solver='cvxopt')
+logger.info("Barriers: " +  str(barrier))
 with open("logs/barrier_" + file_tag + ".log", 'w') as file:
     file.write(repr(barrier))
-logger.info("Barrier stored")
+logger.info("Barriers stored")

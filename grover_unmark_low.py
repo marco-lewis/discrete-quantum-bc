@@ -16,7 +16,7 @@ barrier_degree = 2
 k = 1
 
 log_level=logging.INFO
-file_tag = "grover_mark" + str(n) + "_" + "m" + str(mark)
+file_tag = "grover_unmark" + str(n) + "_" + "m" + str(mark)
 logger = setup_logger(file_tag + ".log", log_level=log_level)
 verbose = 1
 
@@ -30,8 +30,6 @@ diffusion_oracle = 2*temp - diffusion_oracle
 hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 hadamard_n = lambda n: hadamard if n == 1 else np.kron(hadamard, hadamard_n(n-1))
 diffusion = np.dot(hadamard_n(n), np.dot(diffusion_oracle, hadamard_n(n)))
-grover = np.dot(diffusion, oracle)
-# circuit = [grover]
 circuit = [oracle, diffusion]
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
@@ -39,9 +37,9 @@ variables = Z + [z.conjugate() for z in Z]
 
 sum_probs = np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)])
 
-# Marked state will never be unlikely (measured with <1%)
+# Unmarked states will never be likely (>50%)
 g_u = [
-    0.01 - Z[mark] * sym.conjugate(Z[mark]),
+    - np.prod([(Z[i] * sym.conjugate(Z[i]) - 0.5) if i != mark else 1 for i in range(N)]),
     1 - sum_probs,
     sum_probs - 1,
 ]
