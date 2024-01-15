@@ -47,10 +47,10 @@ g_u = [
 ]
 g_u = to_poly(g_u, variables)
 
-d = 0.001
+err = 10 ** -(n+1)
 g_init = []
-g_init += [z * sym.conjugate(z) - (1/N - d) for z in Z]
-g_init += [(1/N + d) - z * sym.conjugate(z) for z in Z]
+g_init += [z * sym.conjugate(z) - (1/N - err) for z in Z]
+g_init += [(1/N + err) - z * sym.conjugate(z) for z in Z]
 g_init += [-1j * (z - sym.conjugate(z)) for z in Z]
 g_init += [ 1j * (z - sym.conjugate(z)) for z in Z]
 g_init += [

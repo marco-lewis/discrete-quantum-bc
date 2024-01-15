@@ -173,15 +173,20 @@ def direct_method(circuit : List[np.ndarray],
     for constraint in cvx_constraints: prob.add_constraint(constraint)
 
     logger.info("Solving problem...")
-    sys.stdout = LoggerWriter(picos_logger.info)
-    sys.stderr = LoggerWriter(picos_logger.error)
-    prob.solve(verbose=bool(verbose), solver=solver)
-    sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderr__
+    try:
+        sys.stdout = LoggerWriter(picos_logger.info)
+        sys.stderr = LoggerWriter(picos_logger.error)
+        prob.solve(verbose=bool(verbose), solver=solver)
+    except Exception as e:
+        logger.exception(e)
+        return [sym.core.numbers.Infinity]*len(barriers)
+    finally:
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
     logger.info("Problem status: " + prob.status)
     if "infeasible" in prob.status or "unbounded" in prob.status:
-        logging.error("Cannot get barrier from problem.")
-        return sym.core.numbers.Infinity
+        logger.error("Cannot get barrier from problem.")
+        return [sym.core.numbers.Infinity]*len(barriers)
     logger.info("Solution found.")
 
     # 5. Return the barrier in a readable format
