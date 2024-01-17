@@ -1,5 +1,4 @@
-from direct import direct_method
-from log_settings import setup_logger
+from run_example import run_example
 from utils import *
 
 import logging
@@ -16,7 +15,6 @@ k = 1
 
 log_level=logging.INFO
 file_tag = "hadamard" + str(n) + "k" + str(k)
-logger = setup_logger(file_tag + ".log", log_level=log_level)
 verbose = 1
 
 hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
@@ -54,11 +52,5 @@ g = {}
 g[UNSAFE] = g_u
 g[INIT] = g_init
 g[INVARIANT] = g_inv
-logger.info("g defined")
-logger.debug(g)
 
-barrier = direct_method(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level)
-logger.info("Barrier: " +  str(barrier))
-with open("logs/barrier_" + file_tag + ".log", 'w') as file:
-    file.write(repr(barrier))
-logger.info("Barrier stored")
+run_example(file_tag, circuit, g, Z, barrier_degree, eps, k, verbose, log_level, solver='mosek')

@@ -1,5 +1,4 @@
-from direct import direct_method
-from log_settings import setup_logger
+from run_example import run_example
 from utils import *
 
 import logging
@@ -17,7 +16,6 @@ k = 1
 
 log_level=logging.INFO
 file_tag = "grover_unmark" + str(n) + "_" + "m" + str(mark)
-logger = setup_logger(file_tag + ".log", log_level=log_level)
 verbose = 1
 
 oracle = np.eye(N, N)
@@ -67,18 +65,5 @@ g = {}
 g[UNSAFE] = g_u
 g[INIT] = g_init
 g[INVARIANT] = g_inv
-logger.info("g defined")
-logger.debug(g)
 
-barrier = direct_method(circuit, g, Z,
-                        barrier_degree=barrier_degree, 
-                        eps=eps, 
-                        k=k,
-                        verbose=verbose,
-                        log_level=log_level,
-                        precision_bound=1e-4,
-                        solver='cvxopt')
-logger.info("Barriers: " +  str(barrier))
-with open("logs/barriers_" + file_tag + ".log", 'w') as file:
-    file.write(repr(barrier))
-logger.info("Barriers stored")
+run_example(file_tag, circuit, g, Z, barrier_degree, eps, k, verbose, log_level)

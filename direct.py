@@ -19,7 +19,7 @@ def direct_method(circuit : List[np.ndarray],
                   verbose=0,
                   log_level=logging.INFO,
                   precision_bound=1e-10,
-                  solver='mosek',):
+                  solver='cvxopt',):
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
     
