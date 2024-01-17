@@ -12,6 +12,7 @@ def raise_error(msg):
     logger.error(msg)
     exit()
 
+# TODO: Change to check multiple barriers
 def check_barrier(barrier : sym.Poly,
                   constraints : Dict[str, List[sym.Poly]],
                   Z : List[sym.Symbol] = [],
