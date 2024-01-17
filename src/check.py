@@ -1,5 +1,5 @@
-from complex import Complex
-from utils import *
+from src.complex import Complex
+from src.utils import *
 
 from functools import reduce
 import logging

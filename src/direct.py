@@ -1,5 +1,5 @@
-from log_settings import LoggerWriter
-from utils import *
+from src.log_settings import LoggerWriter
+from src.utils import *
 
 import logging
 import sys

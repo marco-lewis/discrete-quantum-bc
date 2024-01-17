@@ -1,5 +1,5 @@
-from run_example import run_example
-from utils import *
+from examples.run_example import run_example
+from src.utils import *
 
 import logging
 
@@ -15,7 +15,7 @@ barrier_degree = 2
 k = 1
 
 log_level=logging.INFO
-file_tag = "grover_unmark" + str(n) + "_" + "m" + str(mark)
+file_tag = "grover_faulty" + str(n) + "_" + "m" + str(mark)
 verbose = 1
 
 oracle = np.eye(N, N)
@@ -27,22 +27,24 @@ diffusion_oracle = 2*temp - diffusion_oracle
 
 hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 hadamard_n = lambda n: hadamard if n == 1 else np.kron(hadamard, hadamard_n(n-1))
-diffusion = np.dot(hadamard_n(n), np.dot(diffusion_oracle, hadamard_n(n)))
-circuit = [oracle, diffusion]
+diffusion_faulty = np.dot(np.kron(hadamard_n(n-1),np.eye(2,2)), np.dot(diffusion_oracle, hadamard_n(n)))
+faulty_grover = np.dot(diffusion_faulty, oracle)
+circuit = [oracle, diffusion_faulty]
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
 
 sum_probs = np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)])
 
-# Unmarked states will never be likely (>50%)
+# Marked state will never reach close to 1 (>90%)
 g_u = [
-    - np.prod([(Z[i] * sym.conjugate(Z[i]) - 0.5) if i != mark else 1 for i in range(N)]),
+    Z[mark] * sym.conjugate(Z[mark]) - 0.9,
     1 - sum_probs,
     sum_probs - 1,
 ]
 g_u = to_poly(g_u, variables)
 
+# Start close to superposition
 err = 10 ** -(n+1)
 g_init = []
 g_init += [z * sym.conjugate(z) - (1/N - err) for z in Z]

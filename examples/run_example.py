@@ -1,5 +1,5 @@
-from direct import direct_method
-from log_settings import setup_logger
+from src.direct import direct_method
+from src.log_settings import setup_logger
 
 import logging
 

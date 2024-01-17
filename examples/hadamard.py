@@ -1,5 +1,5 @@
-from run_example import run_example
-from utils import *
+from examples.run_example import run_example
+from src.utils import *
 
 import logging
 
