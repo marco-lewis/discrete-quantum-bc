@@ -9,9 +9,9 @@ from iteration_utilities import grouper
 logger = logging.getLogger("direct")
 picos_logger = logging.getLogger("picos")
 
-def direct_method(circuit : List[np.ndarray],
-                  g : Dict[str, List[sym.Poly]],
-                  Z : List[sym.Symbol],
+def direct_method(circuit : list[np.ndarray],
+                  g : dict[str, list[sym.Poly]],
+                  Z : list[sym.Symbol],
                   barrier_degree=2,
                   eps=0.01,
                   gamma=0.01,
@@ -25,7 +25,7 @@ def direct_method(circuit : List[np.ndarray],
     
     variables = Z + [z.conjugate() for z in Z]
     d = calculate_d(k, eps, gamma)
-    unitaries : List[np.ndarray] = list(np.unique(circuit, axis=0))
+    unitaries : list[np.ndarray] = list(np.unique(circuit, axis=0))
     unitary_idxs = []
     for c in circuit:
         for ui in range(len(unitaries)):
@@ -113,6 +113,7 @@ def direct_method(circuit : List[np.ndarray],
     logger.info("HSOS polynomials made.")
 
     # 2. Get coefficients out to make symbol dictionary
+    # TODO: Fix typing in this section
     logger.info("Fetching coefficients.")
     lam_coeffs : dict[str, list[sym.Symbol]] = {}
     for key in lams: 

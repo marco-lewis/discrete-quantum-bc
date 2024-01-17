@@ -2,7 +2,6 @@ from collections import defaultdict
 from functools import reduce
 import itertools
 import logging
-from typing import Dict, List
 
 import numpy as np
 import picos
@@ -45,12 +44,12 @@ def create_polynomial(variables, deg=2, coeff_tok='a', monomial=False) -> sym.Po
     p = np.sum([coeffs[i] * p[i] for i in range(len(p))])
     return sym.poly(p, variables, domain=K)
 
-def symbols_to_cvx_var_dict(symbols : List[sym.Symbol]):
+def symbols_to_cvx_var_dict(symbols : list[sym.Symbol]):
     cvx_vars = [picos.ComplexVariable(name = s.name) for s in symbols]
     symbol_var_dict = dict(zip(symbols, cvx_vars))
     return symbol_var_dict
 
-def convert_exprs(exprs : List[sym.Poly], symbol_var_dict : Dict[sym.Symbol, picos.ComplexVariable]):
+def convert_exprs(exprs : list[sym.Poly], symbol_var_dict : dict[sym.Symbol, picos.ComplexVariable]):
     def convert(expr):
         if isinstance(expr, sym.Add): return picos.sum([convert(arg) for arg in expr.args])
         if isinstance(expr, sym.Mul): return reduce(lambda x, y: x * y, [convert(arg) for arg in expr.args])
@@ -59,7 +58,7 @@ def convert_exprs(exprs : List[sym.Poly], symbol_var_dict : Dict[sym.Symbol, pic
         return complex(expr)
     return [convert(expr) for expr in exprs]
 
-def convert_exprs_of_matrix(exprs : List[sym.Poly], cvx_matrix : picos.HermitianVariable):
+def convert_exprs_of_matrix(exprs : list[sym.Poly], cvx_matrix : picos.HermitianVariable):
     def convert(expr):
         if isinstance(expr, sym.Add): return picos.sum([convert(arg) for arg in expr.args])
         if isinstance(expr, sym.Mul): return reduce(lambda x, y: x * y, [convert(arg) for arg in expr.args], 1)
@@ -68,7 +67,7 @@ def convert_exprs_of_matrix(exprs : List[sym.Poly], cvx_matrix : picos.Hermitian
     return [convert(expr) for expr in exprs]
 
 def PSD_constraint_generator(sym_polynomial : sym.Poly,
-                             symbol_var_dict : Dict[sym.Symbol, picos.ComplexVariable],
+                             symbol_var_dict : dict[sym.Symbol, picos.ComplexVariable],
                              matrix_name='Q',
                              variables=[]):
     # Setup dictionary of monomials to cvx coefficients for sym_polynomial

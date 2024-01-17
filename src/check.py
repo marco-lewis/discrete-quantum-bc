@@ -14,8 +14,8 @@ def raise_error(msg):
 
 # TODO: Change to check multiple barriers
 def check_barrier(barrier : sym.Poly,
-                  constraints : Dict[str, List[sym.Poly]],
-                  Z : List[sym.Symbol] = [],
+                  constraints : dict[str, list[sym.Poly]],
+                  Z : list[sym.Symbol] = [],
                   unitary = np.eye(2,2),
                   k = 1,
                   eps = 0.01,
