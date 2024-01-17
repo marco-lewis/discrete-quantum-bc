@@ -39,8 +39,8 @@ def direct_method(circuit : List[np.ndarray],
                 ", d: " + str(d))
 
     # 1. Make polynomials
-    lams : Dict(str, List(sym.Poly)) = {}
-    sym_polys : Dict(str, List(sym.Poly)) = {}
+    lams : dict[str, list[sym.Poly]] = {}
+    sym_polys : dict[str, list[sym.Poly]] = {}
     sym_poly_eq = dict([
         (INIT,lambda B, lam, g: sym.poly(-B - np.dot(lam, g[INIT]), variables)),
         (UNSAFE,lambda B, lam, g: sym.poly(B - d - np.dot(lam, g[UNSAFE]), variables)),
@@ -49,7 +49,7 @@ def direct_method(circuit : List[np.ndarray],
         (INDUCTIVE,lambda B, Bk, fk, lam, g: sym.poly(-Bk.subs(zip(Z, np.dot(fk, Z))) + B - np.dot(lam, g[INVARIANT]), variables)),
         ])
     
-    barriers : List(sym.Poly) = [create_polynomial(variables, deg=barrier_degree, coeff_tok='b' + str(j) + '_') for j in range(len(unitaries))]
+    barriers : list[sym.Poly] = [create_polynomial(variables, deg=barrier_degree, coeff_tok='b' + str(j) + '_') for j in range(len(unitaries))]
     logger.info("Barriers made.")
     logger.debug(barriers)
 
@@ -94,13 +94,13 @@ def direct_method(circuit : List[np.ndarray],
     # 1e. Inductive conditions
     lams[INDUCTIVE] = []
     sym_polys[INDUCTIVE] = []
-    chunks = []
-    for circuit_chunk in grouper(circuit, k):
+    chunks : list[tuple[np.ndarray,int,int]] = []
+    circuit_divided : list[tuple[np.ndarray]] = list(grouper(circuit, k))
+    for circuit_chunk in circuit_divided:
         unitary_k = circuit_chunk[0]
         for unitary in circuit_chunk[1:]: unitary_k = np.dot(unitary, unitary_k)
         us = [u.tolist() for u in unitaries]
         chunks.append((unitary_k, us.index(circuit_chunk[0].tolist()), us.index(circuit_chunk[-1].tolist())))
-        # chunks.append((unitary_k, unitaries.index(circuit_chunk[0]), unitaries.index(circuit_chunk[-1])))
 
     chunk_id = 0
     for unitary_k, fst_idx, last_idx in chunks:
@@ -114,16 +114,16 @@ def direct_method(circuit : List[np.ndarray],
 
     # 2. Get coefficients out to make symbol dictionary
     logger.info("Fetching coefficients.")
-    lam_coeffs : Dict[str, List(sym.Symbol)] = {}
+    lam_coeffs : dict[str, list[sym.Symbol]] = {}
     for key in lams: 
         lam_coeffs[key] = []
         for lam in lams[key]:
             lam_coeffs[key] += flatten([[next(iter(coeff.free_symbols)) for coeff in l.coeffs()] for l in lam])
 
-    barrier_coeffs = []
+    barrier_coeffs : list[sym.Symbol] = []
     for barrier in barriers: barrier_coeffs += [next(iter(coeff.free_symbols)) for coeff in barrier.coeffs()]
 
-    symbol_var_dict : Dict[sym.Symbol, picos.ComplexVariable]= {}
+    symbol_var_dict : dict[sym.Symbol, picos.ComplexVariable]= {}
     for lam_symbols in lam_coeffs.values(): symbol_var_dict.update(symbols_to_cvx_var_dict(lam_symbols))
     symbol_var_dict.update(symbols_to_cvx_var_dict(barrier_coeffs))
     logger.info("Symbol to variable dictionary made.")
@@ -131,7 +131,7 @@ def direct_method(circuit : List[np.ndarray],
 
     # 3. Get matrix polynomial and constraints for semidefinite format
     cvx_constraints = []
-    cvx_matrices : List[picos.HermitianVariable] = []
+    cvx_matrices : list[picos.HermitianVariable] = []
 
     logger.info("Generating lam constraints...")
     for key in lams:
@@ -191,10 +191,10 @@ def direct_method(circuit : List[np.ndarray],
 
     # 5. Return the barrier in a readable format
     logger.info("Fetching values...")
-    symbols : List[sym.Symbol] = barrier_coeffs + lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[INVARIANT] + lam_coeffs[INDUCTIVE]
+    symbols : list[sym.Symbol] = barrier_coeffs + lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[INVARIANT] + lam_coeffs[INDUCTIVE]
     symbols = list(set(symbols))
     symbols.sort(key = lambda symbol: symbol.name)
-    symbol_values = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
+    symbol_values : dict[sym.Symbol, complex] = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
     for key in symbol_values:
         if not(symbol_values[key]): t = 0 
         else:
