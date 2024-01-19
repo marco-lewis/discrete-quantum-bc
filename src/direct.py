@@ -42,11 +42,11 @@ def direct_method(circuit : list[np.ndarray],
     lams : dict[str, list[sym.Poly]] = {}
     sym_polys : dict[str, list[sym.Poly]] = {}
     sym_poly_eq = dict([
-        (INIT,lambda B, lam, g: sym.poly(-B - np.dot(lam, g[INIT]), variables)),
-        (UNSAFE,lambda B, lam, g: sym.poly(B - d - np.dot(lam, g[UNSAFE]), variables)),
-        (DIFF,lambda B, f, lam, g: sym.poly(-B.subs(zip(Z, np.dot(f, Z))) + B - np.dot(lam, g[INVARIANT]) + eps, variables)),
+        (INIT, lambda B, lam, g: sym.poly(-B - np.dot(lam, g[INIT]), variables)),
+        (UNSAFE, lambda B, lam, g: sym.poly(B - d - np.dot(lam, g[UNSAFE]), variables)),
+        (DIFF, lambda B, f, lam, g: sym.poly(-B.subs(zip(Z, np.dot(f, Z))) + B - np.dot(lam, g[INVARIANT]) + eps, variables)),
         (CHANGE, lambda B, Bnext, lam, g: sym.poly(-Bnext + B - np.dot(lam, g[INVARIANT]) + gamma, variables)),
-        (INDUCTIVE,lambda B, Bk, fk, lam, g: sym.poly(-Bk.subs(zip(Z, np.dot(fk, Z))) + B - np.dot(lam, g[INVARIANT]), variables)),
+        (INDUCTIVE, lambda B, Bk, fk, lam, g: sym.poly(-Bk.subs(zip(Z, np.dot(fk, Z))) + B - np.dot(lam, g[INVARIANT]), variables)),
         ])
     
     barriers : list[sym.Poly] = [create_polynomial(variables, deg=barrier_degree, coeff_tok='b' + str(j) + '_') for j in range(len(unitaries))]
@@ -174,20 +174,21 @@ def direct_method(circuit : list[np.ndarray],
     for constraint in cvx_constraints: prob.add_constraint(constraint)
 
     logger.info("Solving problem...")
+    fail_barriers : list[tuple[np.ndarray, sym.Poly]] = [(unitary, sym.poly(0)) for unitary in unitaries]
     try:
         sys.stdout = LoggerWriter(picos_logger.info)
         sys.stderr = LoggerWriter(picos_logger.error)
         prob.solve(verbose=bool(verbose), solver=solver)
     except Exception as e:
         logger.exception(e)
-        return [sym.core.numbers.Infinity]*len(barriers)
+        return fail_barriers
     finally:
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
     logger.info("Problem status: " + prob.status)
     if "infeasible" in prob.status or "unbounded" in prob.status:
         logger.error("Cannot get barrier from problem.")
-        return [sym.core.numbers.Infinity]*len(barriers)
+        return fail_barriers
     logger.info("Solution found.")
 
     # 5. Return the barrier in a readable format
@@ -210,6 +211,6 @@ def direct_method(circuit : list[np.ndarray],
         logger.debug(m.name)
         logger.debug(m)
     barriers = [barrier.subs(symbol_values) for barrier in barriers]
-    barriers = list(zip(unitaries, barriers))
+    unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]] = list(zip(unitaries, barriers))
     logger.info("Barriers made.")
-    return barriers
+    return unitary_barrier_pairs
