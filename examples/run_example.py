@@ -8,7 +8,7 @@ def run_example(file_tag, circuit, g, Z, barrier_degree=2, eps=0.01, k=2, verbos
     logger.info("g defined")
     logger.debug(g)
 
-    barrier = direct_method(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level, precision_bound=precision_bound, solver=solver)
+    barrier = direct_method(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, k=k, verbose=verbose, log_level=log_level, precision_bound=precision_bound, solver=solver, check=False)
     logger.info("Barriers: " +  str(barrier))
     with open("logs/barrier_" + file_tag + ".log", 'w') as file:
         file.write(repr(barrier))

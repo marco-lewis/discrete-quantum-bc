@@ -1,3 +1,4 @@
+from src.check import check_barrier
 from src.log_settings import LoggerWriter
 from src.utils import *
 
@@ -19,7 +20,8 @@ def direct_method(circuit : list[np.ndarray],
                   verbose=0,
                   log_level=logging.INFO,
                   precision_bound=1e-10,
-                  solver='cvxopt',):
+                  solver='cvxopt',
+                  check=False,):
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
     
@@ -174,7 +176,8 @@ def direct_method(circuit : list[np.ndarray],
     for constraint in cvx_constraints: prob.add_constraint(constraint)
 
     logger.info("Solving problem...")
-    fail_barriers : list[tuple[np.ndarray, sym.Poly]] = [(unitary, sym.poly(0)) for unitary in unitaries]
+    # TODO: Add type/infty/symPoly
+    fail_barriers = [(unitary, 0) for unitary in unitaries]
     try:
         sys.stdout = LoggerWriter(picos_logger.info)
         sys.stderr = LoggerWriter(picos_logger.error)
@@ -213,4 +216,9 @@ def direct_method(circuit : list[np.ndarray],
     barriers = [barrier.subs(symbol_values) for barrier in barriers]
     unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]] = list(zip(unitaries, barriers))
     logger.info("Barriers made.")
+    
+    # 6. Check barrier works
+    if check:
+        logger.info("Performing checks")
+        check_barrier(unitary_barrier_pairs, g, Z, idx_pairs, chunks, k, eps, gamma, log_level)
     return unitary_barrier_pairs

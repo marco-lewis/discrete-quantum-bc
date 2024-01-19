@@ -12,25 +12,32 @@ def raise_error(msg):
     logger.error(msg)
     exit()
 
-# TODO: Change to check multiple barriers
-def check_barrier(barrier : sym.Poly,
-                  constraints : dict[str, list[sym.Poly]],
+# TODO: Change so unitaries and barriers are separate
+def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
+                  g : dict[str, list[sym.Poly]],
                   Z : list[sym.Symbol] = [],
-                  unitary = np.eye(2,2),
+                  idx_pairs : list[tuple[int,int]] = [()],
+                  chunks : list[tuple[np.ndarray,int,int]] = [],
                   k = 1,
                   eps = 0.01,
+                  gamma = 0.01,
                   log_level = logging.INFO):
     logger.setLevel(log_level)
-    d = calculate_d(k, eps)
-    unitary_k = generate_unitary_k(k, unitary)
+    d = calculate_d(k, eps, gamma)
     variables = Z + [z.conjugate() for z in Z]
     var_z3_dict = dict(zip(Z, [Complex(var.name) for var in Z]))
     
-    z3_barrier = _sympy_poly_to_z3(var_z3_dict, barrier)
-    z3_diff = _sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, variables, domain=sym.CC))
-    z3_k_diff = _sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary_k, Z))) - barrier, variables, domain=sym.CC))
+    # Barriers
+    z3_barriers = [(unitary, _sympy_poly_to_z3(var_z3_dict, barrier)) for unitary, barrier in barriers]
+    # Difference
+    z3_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, variables, domain=sym.CC)) for unitary, barrier in barriers]
+    # Change
+    z3_changes = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barriers[i2][1] - barriers[i1][1], variables, domain=sym.CC)) for i1, i2 in idx_pairs]
+    # Inductive
+    z3_k_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barriers[i2][1].subs(zip(Z, np.dot(unitary_k, Z))) - barriers[i1][1], variables, domain=sym.CC)) for unitary_k, i1, i2 in chunks]
 
-    for key in constraints: constraints[key] = [_sympy_poly_to_z3(var_z3_dict, p).r >= 0 for p in constraints[key]]
+    z3_constraints : dict[str, z3.ExprRef] = {}
+    for key in g: z3_constraints[key] = [_sympy_poly_to_z3(var_z3_dict, p).r >= 0 for p in g[key]]
 
     def _check(s : z3.Solver, cond):
         s.push()
@@ -42,23 +49,30 @@ def check_barrier(barrier : sym.Poly,
         elif sat == z3.sat:
             m = s.model()
             s2 = z3.Solver()
-            s2.add(Complex('barrier') == z3_barrier)
+            s2.add([Complex('barrier' + str(i)) == z3_barriers[i] for i in range(len(z3_barriers))])
             for v in m: s2.add(v() == m[v()])
             s2.check()
             raise_error("Counter example: " + str(s2.model()))
         s.pop()
     
     s = z3.Solver()
-    logger.info("Barrier real")
-    _check(s, (z3.And(constraints[INVARIANT]), z3.Not(z3.And(z3_barrier.i >= -1e-10, z3_barrier.i <= 1e-10))))
-    logger.info("Check " + INIT)
-    _check(s, (z3.And(constraints[INIT]), z3_barrier.r > 0))
-    logger.info("Check " + UNSAFE)
-    _check(s, (z3.And(constraints[UNSAFE]), z3_barrier.r < d))
-    logger.info("Check " + DIFF)
-    _check(s, (z3.And(constraints[INVARIANT]), z3_diff.r > eps))
-    logger.info("Check " + INDUCTIVE)
-    _check(s, (z3.And(constraints[INVARIANT]), z3_k_diff.r > 0))
+    for unitary, z3_barrier in z3_barriers:
+        logger.info("Unitary\n" + str(unitary))
+        logger.info("Check barrier real")
+        _check(s, (z3.And(z3_constraints[INVARIANT]), z3.Not(z3.And(z3_barrier.i >= -1e-10, z3_barrier.i <= 1e-10))))
+        logger.info("Check " + INIT)
+        _check(s, (z3.And(z3_constraints[INIT]), z3_barrier.r > 0))
+        logger.info("Check " + UNSAFE)
+        _check(s, (z3.And(z3_constraints[UNSAFE]), z3_barrier.r < d))
+    for z3_diff in z3_diffs:
+        logger.info("Check " + DIFF + " " + z3_diffs.index(z3_diff))
+        _check(s, (z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps))
+    for z3_change in z3_changes:
+        logger.info("Check " + CHANGE + " " + z3_changes.index(z3_change))
+        _check(s, (z3.And(z3_constraints[INVARIANT]), z3_change.r > gamma))
+    for z3_k_diff in z3_k_diffs:
+        logger.info("Check " + INDUCTIVE + " " + z3_k_diffs.index(z3_k_diff))
+        _check(s, (z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0))
     logger.info("All constraints checked.")
 
 # Based on: https://stackoverflow.com/a/38980538/19768075
