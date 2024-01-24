@@ -39,10 +39,10 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
     z3_constraints : dict[str, z3.ExprRef] = {}
     for key in g: z3_constraints[key] = [_sympy_poly_to_z3(var_z3_dict, p).r >= 0 for p in g[key]]
 
-    def _check(s : z3.Solver, cond):
+    def _check(s : z3.Solver, conds : list[z3.ExprRef]):
         s.push()
-        s.add(cond)
-        logger.debug(str(s))
+        [s.add(z3.simplify(cond)) for cond in conds]
+        logger.debug("Conditions in solver:\n" + str(s))
         sat = s.check()
         if sat == z3.unsat: logger.info("Constraint satisfied.")
         elif sat == z3.unknown: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate constraint.")
@@ -55,24 +55,25 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
             raise_error("Counter example: " + str(s2.model()))
         s.pop()
     
-    s = z3.Solver()
+    tactic = z3.Then('solve-eqs','smt')
+    s = tactic.solver()
     for unitary, z3_barrier in z3_barriers:
         logger.info("Unitary\n" + str(unitary))
         logger.info("Check barrier real")
-        _check(s, (z3.And(z3_constraints[INVARIANT]), z3.Not(z3.And(z3_barrier.i >= -1e-10, z3_barrier.i <= 1e-10))))
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3.Not(z3_barrier.i == 0)])
         logger.info("Check " + INIT)
-        _check(s, (z3.And(z3_constraints[INIT]), z3_barrier.r > 0))
+        _check(s, [z3.And(z3_constraints[INIT]), z3_barrier.r > 0])
         logger.info("Check " + UNSAFE)
-        _check(s, (z3.And(z3_constraints[UNSAFE]), z3_barrier.r < d))
+        _check(s, [z3.And(z3_constraints[UNSAFE]), z3_barrier.r < d])
     for z3_diff in z3_diffs:
         logger.info("Check " + DIFF + " " + z3_diffs.index(z3_diff))
-        _check(s, (z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps))
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps])
     for z3_change in z3_changes:
         logger.info("Check " + CHANGE + " " + z3_changes.index(z3_change))
-        _check(s, (z3.And(z3_constraints[INVARIANT]), z3_change.r > gamma))
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_change.r > gamma])
     for z3_k_diff in z3_k_diffs:
         logger.info("Check " + INDUCTIVE + " " + z3_k_diffs.index(z3_k_diff))
-        _check(s, (z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0))
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0])
     logger.info("All constraints checked.")
 
 # Based on: https://stackoverflow.com/a/38980538/19768075
