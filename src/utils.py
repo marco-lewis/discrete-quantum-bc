@@ -10,6 +10,11 @@ from sympy.matrices.expressions.matexpr import MatrixElement
 
 logger = logging.getLogger("utils")
 
+DREAL = "dreal"
+DREAL_SAT = "delta-sat"
+DREAL_UNSAT = "unsat"
+Z3 = "Z3"
+
 UNSAFE = 'unsafe'
 INIT = 'init'
 INVARIANT = 'invariant'

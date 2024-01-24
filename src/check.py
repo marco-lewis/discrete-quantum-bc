@@ -1,5 +1,6 @@
 from src.complex import Complex
 from src.utils import *
+from src.z3todreal import run_dreal
 
 from functools import reduce
 import logging
@@ -39,20 +40,28 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
     z3_constraints : dict[str, z3.ExprRef] = {}
     for key in g: z3_constraints[key] = [_sympy_poly_to_z3(var_z3_dict, p).r >= 0 for p in g[key]]
 
-    def _check(s : z3.Solver, conds : list[z3.ExprRef]):
+    def _check(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3):
         s.push()
         [s.add(z3.simplify(cond)) for cond in conds]
-        logger.debug("Conditions in solver:\n" + str(s))
-        sat = s.check()
-        if sat == z3.unsat: logger.info("Constraint satisfied.")
-        elif sat == z3.unknown: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate constraint.")
-        elif sat == z3.sat:
-            m = s.model()
-            s2 = z3.Solver()
-            s2.add([Complex('barrier' + str(i)) == z3_barriers[i] for i in range(len(z3_barriers))])
-            for v in m: s2.add(v() == m[v()])
-            s2.check()
-            raise_error("Counter example: " + str(s2.model()))
+        if tool == Z3:
+            logger.debug("Conditions in solver:\n" + str(s))
+            logger.info("Checking using Z3")
+            sat = s.check()
+            if sat == z3.unsat: logger.info("Constraint satisfied.")
+            elif sat == z3.unknown: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate constraint.")
+            elif sat == z3.sat:
+                m = s.model()
+                s2 = z3.Solver()
+                s2.add([Complex('barrier' + str(i)) == z3_barriers[i] for i in range(len(z3_barriers))])
+                for v in m: s2.add(v() == m[v()])
+                s2.check()
+                raise_error("Counter example: " + str(s2.model()))
+        elif tool == DREAL:
+            logger.info("Checking using dreal")
+            sat, model = run_dreal(s)
+            if sat == DREAL_UNSAT: logger.info("Constraint satisfied.")
+            elif sat == DREAL_SAT: raise_error("Counter example: " + model)
+        else: logger.error("No tool selected")
         s.pop()
     
     tactic = z3.Then('solve-eqs','smt')
