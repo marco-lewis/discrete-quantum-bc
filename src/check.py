@@ -45,7 +45,7 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
         s.push()
         [s.add(z3.simplify(cond)) for cond in conds]
         if tool == Z3:
-            logger.info("Checking using Z3")
+            logger.info("Using Z3")
             logger.debug("Conditions in solver:\n" + str(s))
             sat = s.check()
             if sat == z3.unsat: logger.info("Constraint satisfied.")
@@ -54,7 +54,7 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
                 m = s.model()
                 raise_error("Counter example: " + str(m))
         elif tool == DREAL:
-            logger.info("Checking using dreal")
+            logger.info("Using dreal")
             sat, model = run_dreal(s)
             if sat == DREAL_UNSAT: logger.info("Constraint satisfied.")
             elif sat == DREAL_SAT: raise_error("Counter example: " + model)
@@ -71,14 +71,14 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
         _check(s, [z3.And(z3_constraints[INIT]), z3_barrier.r > 0], tool=DREAL)
         logger.info("Check " + UNSAFE)
         _check(s, [z3.And(z3_constraints[UNSAFE]), z3_barrier.r < d], tool=DREAL)
-    for z3_diff in z3_diffs:
-        logger.info("Check " + DIFF + " " + z3_diffs.index(z3_diff))
+    for idx, z3_diff in enumerate(z3_diffs):
+        logger.info("Check " + DIFF + str(idx))
         _check(s, [z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps], tool=DREAL)
-    for z3_change in z3_changes:
-        logger.info("Check " + CHANGE + " " + z3_changes.index(z3_change))
+    for idx, z3_change in enumerate(z3_changes):
+        logger.info("Check " + CHANGE + str(idx))
         _check(s, [z3.And(z3_constraints[INVARIANT]), z3_change.r > gamma], tool=DREAL)
-    for z3_k_diff in z3_k_diffs:
-        logger.info("Check " + INDUCTIVE + " " + z3_k_diffs.index(z3_k_diff))
+    for idx, z3_k_diff in enumerate(z3_k_diffs):
+        logger.info("Check " + INDUCTIVE + str(idx))
         _check(s, [z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0], tool=DREAL)
     logger.info("All constraints checked.")
 

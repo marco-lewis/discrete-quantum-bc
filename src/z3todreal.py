@@ -24,9 +24,9 @@ def run_dreal(s : z3.Solver, delta=0.001):
         if error_msg:
             logger.error("dreal ran into an error:\n%s", error_msg)
             sys.exit(1)
-        logger.info("dReal ran successfully.")
+        logger.info("dreal ran successfully.")
         output = result.stdout.decode('utf-8')
-        logger.debug("dReal output:\n" + output)
+        logger.debug("dreal output:\n" + output)
         sat = output[:output.index("\n")]
         sat = DREAL_SAT if "delta-sat" in sat else sat
         model = output[output.index("\n") + 1:-1]
