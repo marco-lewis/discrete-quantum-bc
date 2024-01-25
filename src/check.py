@@ -4,6 +4,7 @@ from src.z3todreal import run_dreal
 
 from functools import reduce
 import logging
+import sys
 
 import z3
 
@@ -11,7 +12,7 @@ logger = logging.getLogger("check")
 
 def raise_error(msg):
     logger.error(msg)
-    exit()
+    sys.exit(1)
 
 # TODO: Change so unitaries and barriers are separate
 def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
@@ -44,8 +45,8 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
         s.push()
         [s.add(z3.simplify(cond)) for cond in conds]
         if tool == Z3:
-            logger.debug("Conditions in solver:\n" + str(s))
             logger.info("Checking using Z3")
+            logger.debug("Conditions in solver:\n" + str(s))
             sat = s.check()
             if sat == z3.unsat: logger.info("Constraint satisfied.")
             elif sat == z3.unknown: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate constraint.")
