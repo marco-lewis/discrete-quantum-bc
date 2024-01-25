@@ -53,4 +53,4 @@ g[UNSAFE] = g_u
 g[INIT] = g_init
 g[INVARIANT] = g_inv
 
-run_example(file_tag, circuit, g, Z, barrier_degree, eps, k, verbose, log_level, solver='mosek')
+run_example(file_tag, circuit, g, Z, barrier_degree, eps, k, verbose, log_level, solver='mosek', check=True)

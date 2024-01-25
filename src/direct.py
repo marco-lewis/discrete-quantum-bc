@@ -216,9 +216,10 @@ def direct_method(circuit : list[np.ndarray],
     barriers = [barrier.subs(symbol_values) for barrier in barriers]
     unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]] = list(zip(unitaries, barriers))
     logger.info("Barriers made.")
+    [logger.debug(str(u) + ":\n" + str(b)) for u, b in unitary_barrier_pairs]
     
     # 6. Check barrier works
     if check:
         logger.info("Performing checks")
-        check_barrier(unitary_barrier_pairs, g, Z, idx_pairs, chunks, k, eps, gamma, log_level)
+        check_barrier(unitary_barrier_pairs, g, Z, idx_pairs, chunks, k, eps, gamma, log_level=log_level)
     return unitary_barrier_pairs

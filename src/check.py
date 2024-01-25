@@ -52,11 +52,7 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
             elif sat == z3.unknown: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate constraint.")
             elif sat == z3.sat:
                 m = s.model()
-                s2 = z3.Solver()
-                s2.add([Complex('barrier' + str(i)) == z3_barriers[i] for i in range(len(z3_barriers))])
-                for v in m: s2.add(v() == m[v()])
-                s2.check()
-                raise_error("Counter example: " + str(s2.model()))
+                raise_error("Counter example: " + str(m))
         elif tool == DREAL:
             logger.info("Checking using dreal")
             sat, model = run_dreal(s)
@@ -70,20 +66,20 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
     for unitary, z3_barrier in z3_barriers:
         logger.info("Unitary\n" + str(unitary))
         logger.info("Check barrier real")
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3.Not(z3_barrier.i == 0)])
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3.Not(z3_barrier.i == 0)], tool=DREAL)
         logger.info("Check " + INIT)
-        _check(s, [z3.And(z3_constraints[INIT]), z3_barrier.r > 0])
+        _check(s, [z3.And(z3_constraints[INIT]), z3_barrier.r > 0], tool=DREAL)
         logger.info("Check " + UNSAFE)
-        _check(s, [z3.And(z3_constraints[UNSAFE]), z3_barrier.r < d])
+        _check(s, [z3.And(z3_constraints[UNSAFE]), z3_barrier.r < d], tool=DREAL)
     for z3_diff in z3_diffs:
         logger.info("Check " + DIFF + " " + z3_diffs.index(z3_diff))
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps])
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps], tool=DREAL)
     for z3_change in z3_changes:
         logger.info("Check " + CHANGE + " " + z3_changes.index(z3_change))
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_change.r > gamma])
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_change.r > gamma], tool=DREAL)
     for z3_k_diff in z3_k_diffs:
         logger.info("Check " + INDUCTIVE + " " + z3_k_diffs.index(z3_k_diff))
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0])
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0], tool=DREAL)
     logger.info("All constraints checked.")
 
 # Based on: https://stackoverflow.com/a/38980538/19768075
