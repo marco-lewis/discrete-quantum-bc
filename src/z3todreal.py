@@ -11,7 +11,8 @@ DREAL_PATH = '/opt/dreal/4.21.06.2/bin/dreal'
 
 logger = logging.getLogger("dreal")
 
-def run_dreal(s : z3.Solver, delta=0.001):
+def run_dreal(s : z3.Solver, delta=0.001, log_level=logging.INFO):
+    logger.setLevel(log_level)
     smt2 = z3_to_dreal(s)
     smt2_path = '/tmp/barrierforqcirc.smt2'
     with open(smt2_path, "w") as smt2file:
