@@ -15,7 +15,7 @@ def raise_error(msg):
     sys.exit(1)
 
 # TODO: Change so unitaries and barriers are separate
-def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
+def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
                   g : dict[str, list[sym.Poly]],
                   Z : list[sym.Symbol] = [],
                   idx_pairs : list[tuple[int,int]] = [()],
@@ -30,14 +30,14 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
     var_z3_dict = dict(zip(Z, [Complex(var.name) for var in Z]))
     
     # Barriers
-    z3_barriers = [(unitary, _sympy_poly_to_z3(var_z3_dict, barrier)) for unitary, barrier in barriers]
+    z3_barriers = [(unitary, _sympy_poly_to_z3(var_z3_dict, barrier)) for unitary, barrier in unitary_barrier_pairs]
     # Difference
-    z3_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, variables, domain=sym.CC)) for unitary, barrier in barriers]
+    z3_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, variables, domain=sym.CC)) for unitary, barrier in unitary_barrier_pairs]
     # Change
     # TODO: Need to add functionality for when no changes should take place
-    z3_changes = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barriers[i2][1] - barriers[i1][1], variables, domain=sym.CC)) for i1, i2 in idx_pairs]
+    z3_changes = [_sympy_poly_to_z3(var_z3_dict, sym.poly(unitary_barrier_pairs[i2][1] - unitary_barrier_pairs[i1][1], variables, domain=sym.CC)) for i1, i2 in idx_pairs]
     # Inductive
-    z3_k_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barriers[i2][1].subs(zip(Z, np.dot(unitary_k, Z))) - barriers[i1][1], variables, domain=sym.CC)) for unitary_k, i1, i2 in chunks]
+    z3_k_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(unitary_barrier_pairs[i2][1].subs(zip(Z, np.dot(unitary_k, Z))) - unitary_barrier_pairs[i1][1], variables, domain=sym.CC)) for unitary_k, i1, i2 in chunks]
 
     z3_constraints : dict[str, z3.ExprRef] = {}
     for key in g: z3_constraints[key] = [_sympy_poly_to_z3(var_z3_dict, p).r >= 0 for p in g[key]]
@@ -75,14 +75,14 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
     # TODO: Change delta or run z3 (long time?)
     for idx, z3_diff in enumerate(z3_diffs):
         logger.info("Check " + DIFF + str(idx))
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps], tool=DREAL)
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps], tool=Z3)
     for idx, z3_change in enumerate(z3_changes):
         logger.info("Check " + CHANGE + str(idx))
         _check(s, [z3.And(z3_constraints[INVARIANT]), z3_change.r > gamma], tool=DREAL)
     # TODO: Change delta or run z3 (long time?)
     for idx, z3_k_diff in enumerate(z3_k_diffs):
         logger.info("Check " + INDUCTIVE + str(idx))
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0], tool=DREAL)
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0], tool=Z3)
     logger.info("All constraints checked.")
 
 # Based on: https://stackoverflow.com/a/38980538/19768075
