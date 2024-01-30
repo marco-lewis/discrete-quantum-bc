@@ -84,7 +84,7 @@ def direct_method(circuit : list[np.ndarray],
         idx = unitary_idxs[i]
         next_idx = unitary_idxs[i+1]
         # Check if matched already
-        if (idx, next_idx) not in idx_pairs:
+        if (idx, next_idx) not in idx_pairs and idx != next_idx:
             # If not add to sym_polys[CHANGE] with respective barriers
             lam = [create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + CHANGE + str(idx) + "," + str(next_idx) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))]
             lams[CHANGE].append(lam)
@@ -115,7 +115,7 @@ def direct_method(circuit : list[np.ndarray],
     logger.info("HSOS polynomials made.")
 
     # 2. Get coefficients out to make symbol dictionary
-    # TODO: Fix typing in this section
+    # TODO: Fix typing in this section (optional)
     logger.info("Fetching coefficients.")
     lam_coeffs : dict[str, list[sym.Symbol]] = {}
     for key in lams: 
