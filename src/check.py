@@ -34,6 +34,7 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
     # Difference
     z3_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, variables, domain=sym.CC)) for unitary, barrier in barriers]
     # Change
+    # TODO: Need to add functionality for when no changes should take place
     z3_changes = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barriers[i2][1] - barriers[i1][1], variables, domain=sym.CC)) for i1, i2 in idx_pairs]
     # Inductive
     z3_k_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barriers[i2][1].subs(zip(Z, np.dot(unitary_k, Z))) - barriers[i1][1], variables, domain=sym.CC)) for unitary_k, i1, i2 in chunks]
@@ -41,7 +42,7 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
     z3_constraints : dict[str, z3.ExprRef] = {}
     for key in g: z3_constraints[key] = [_sympy_poly_to_z3(var_z3_dict, p).r >= 0 for p in g[key]]
 
-    def _check(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3):
+    def _check(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3, delta=0.001):
         s.push()
         [s.add(z3.simplify(cond)) for cond in conds]
         if tool == Z3:
@@ -55,7 +56,7 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
                 raise_error("Counter example: " + str(m))
         elif tool == DREAL:
             logger.info("Using dreal")
-            sat, model = run_dreal(s)
+            sat, model = run_dreal(s, delta=delta)
             if sat == DREAL_UNSAT: logger.info("Constraint satisfied.")
             elif sat == DREAL_SAT: raise_error("Counter example: " + model)
         else: logger.error("No tool selected")
@@ -66,17 +67,19 @@ def check_barrier(barriers : list[tuple[np.ndarray, sym.Poly]],
     for unitary, z3_barrier in z3_barriers:
         logger.info("Unitary\n" + str(unitary))
         logger.info("Check barrier real")
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3.Not(z3_barrier.i == 0)], tool=DREAL)
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3.Not(z3_barrier.i == 0)], tool=Z3)
         logger.info("Check " + INIT)
         _check(s, [z3.And(z3_constraints[INIT]), z3_barrier.r > 0], tool=DREAL)
         logger.info("Check " + UNSAFE)
         _check(s, [z3.And(z3_constraints[UNSAFE]), z3_barrier.r < d], tool=DREAL)
+    # TODO: Change delta or run z3 (long time?)
     for idx, z3_diff in enumerate(z3_diffs):
         logger.info("Check " + DIFF + str(idx))
         _check(s, [z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps], tool=DREAL)
     for idx, z3_change in enumerate(z3_changes):
         logger.info("Check " + CHANGE + str(idx))
         _check(s, [z3.And(z3_constraints[INVARIANT]), z3_change.r > gamma], tool=DREAL)
+    # TODO: Change delta or run z3 (long time?)
     for idx, z3_k_diff in enumerate(z3_k_diffs):
         logger.info("Check " + INDUCTIVE + str(idx))
         _check(s, [z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0], tool=DREAL)
