@@ -45,9 +45,9 @@ def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
     def _check(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3, delta=0.001):
         s.push()
         [s.add(z3.simplify(cond)) for cond in conds]
+        logger.debug("Conditions in solver:\n" + str(s))
         if tool == Z3:
             logger.info("Using Z3")
-            logger.debug("Conditions in solver:\n" + str(s))
             sat = s.check()
             if sat == z3.unsat: logger.info("Constraint satisfied.")
             elif sat == z3.unknown: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate constraint.")
@@ -56,7 +56,7 @@ def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
                 raise_error("Counter example: " + str(m))
         elif tool == DREAL:
             logger.info("Using dreal")
-            sat, model = run_dreal(s, delta=delta)
+            sat, model = run_dreal(s, delta=delta, log_level=log_level)
             if sat == DREAL_UNSAT: logger.info("Constraint satisfied.")
             elif sat == DREAL_SAT: raise_error("Counter example: " + model)
         else: logger.error("No tool selected")

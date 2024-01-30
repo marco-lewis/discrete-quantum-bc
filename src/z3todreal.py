@@ -38,7 +38,6 @@ def z3_to_dreal(s: z3.Solver):
     smt2 = s.to_smt2()
     smt2 = smt2[:smt2.index("(")] + ";" + smt2[smt2.index("("):]
     smt2 = smt2[:smt2.index("(check-sat)")]
-    # smt2 = "(set-logc QF_NRA)\n" + smt2
     smt2 += '(check-sat)\n'
     smt2 += '(get-model)\n'
     smt2 += '(exit)\n'
