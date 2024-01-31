@@ -41,7 +41,7 @@ def direct_method(circuit : list[np.ndarray],
                 ", d: " + str(d))
 
     # 1. Make polynomials
-    lams : dict[str, list[sym.Poly]] = {}
+    lams : dict[str, list[list[sym.Poly]]] = {}
     sym_polys : dict[str, list[sym.Poly]] = {}
     sym_poly_eq = dict([
         (INIT, lambda B, lam, g: sym.poly(-B - np.dot(lam, g[INIT]), variables)),
@@ -209,7 +209,13 @@ def direct_method(circuit : list[np.ndarray],
             except:
                 t = symbol_values[key] if abs(symbol_values[key]) > precision_bound else 0
         symbol_values[key] = t
-    [[[logger.debug(l.subs(symbol_values)) for l in ls] for ls in lams[key]] for key in lams]
+    logger.debug("lambda polynomials")
+    for key in lams:
+        for idx, ls in enumerate(lams[key]):
+            for jdx, poly in enumerate(ls):
+                logger.debug(key + str(idx) + ";" + str(jdx))
+                logger.debug(poly.subs(symbol_values))
+    logger.debug("Convex Matrices")
     for m in cvx_matrices:
         logger.debug(m.name)
         logger.debug(m)
