@@ -1,4 +1,4 @@
-from src.complex import Complex
+from src.complex import Complex, I
 from src.utils import *
 from src.z3todreal import run_dreal
 
@@ -14,7 +14,6 @@ def raise_error(msg):
     logger.error(msg)
     sys.exit(1)
 
-# TODO: Change so unitaries and barriers are separate
 def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
                   g : dict[str, list[sym.Poly]],
                   Z : list[sym.Symbol] = [],
@@ -67,22 +66,22 @@ def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
     for unitary, z3_barrier in z3_barriers:
         logger.info("Unitary\n" + str(unitary))
         logger.info("Check barrier real")
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3.Not(z3_barrier.i == 0)], tool=Z3)
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3.Not(z3_barrier.i == 0)], tool=DREAL)
         logger.info("Check " + INIT)
         _check(s, [z3.And(z3_constraints[INIT]), z3_barrier.r > 0], tool=DREAL)
         logger.info("Check " + UNSAFE)
         _check(s, [z3.And(z3_constraints[UNSAFE]), z3_barrier.r < d], tool=DREAL)
-    # TODO: Change delta or run z3 (long time?)
+    # TODO: Change delta (delta = 1e-20) or run z3 (hanging?)
     for idx, z3_diff in enumerate(z3_diffs):
         logger.info("Check " + DIFF + str(idx))
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps], tool=Z3)
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps], tool=DREAL, delta=1e-10)
     for idx, z3_change in enumerate(z3_changes):
         logger.info("Check " + CHANGE + str(idx))
         _check(s, [z3.And(z3_constraints[INVARIANT]), z3_change.r > gamma], tool=DREAL)
-    # TODO: Change delta or run z3 (long time?)
+    # TODO: Change delta (delta = 1e-20) or run z3 (hanging?)
     for idx, z3_k_diff in enumerate(z3_k_diffs):
         logger.info("Check " + INDUCTIVE + str(idx))
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0], tool=Z3)
+        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0], tool=DREAL, delta=1e-10)
     logger.info("All constraints checked.")
 
 # Based on: https://stackoverflow.com/a/38980538/19768075
@@ -94,7 +93,8 @@ def _sympy_poly_to_z3(var_map, e) -> z3.ExprRef:
     elif isinstance(e, sym.Number): rv = float(e)
     elif isinstance(e, sym.Mul): rv = reduce((lambda x, y: x * y), [_sympy_poly_to_z3(var_map, exp) for exp in e.args])
     elif isinstance(e, sym.Add): rv = sum([_sympy_poly_to_z3(var_map, exp) for exp in e.args])
-    elif isinstance(e, sym.Pow): rv = _sympy_poly_to_z3(var_map, e.args[0]) ** _sympy_poly_to_z3(var_map, e.args[1])
+    elif isinstance(e, sym.Pow): rv = _sympy_poly_to_z3(var_map, e.args[0]) ** int(_sympy_poly_to_z3(var_map, e.args[1]))
     elif isinstance(e, sym.conjugate): rv = _sympy_poly_to_z3(var_map, e.args[0]).conj()
+    elif isinstance(e, sym.core.numbers.ImaginaryUnit): rv = I
     if rv is None: raise_error("Unable to handle input " + repr(e) + " (" + str(type(e)) + ")")
     return rv
