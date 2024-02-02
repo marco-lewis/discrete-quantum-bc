@@ -118,7 +118,10 @@ def direct_method(circuit : list[np.ndarray],
     # TODO: Fix typing in this section (optional)
     logger.info("Fetching coefficients.")
     lam_coeffs : dict[str, list[sym.Symbol]] = {}
-    for key in lams: lam_coeffs[key] = [flatten([[next(iter(coeff.free_symbols)) for coeff in l.coeffs()] for l in lam]) for lam in lams[key]]
+    for key in lams: 
+        lam_coeffs[key] = []
+        for lam in lams[key]:
+            lam_coeffs[key] += flatten([[next(iter(coeff.free_symbols)) for coeff in l.coeffs()] for l in lam])
 
     barrier_coeffs : list[sym.Symbol] = []
     for barrier in barriers: barrier_coeffs += [next(iter(coeff.free_symbols)) for coeff in barrier.coeffs()]
@@ -135,20 +138,26 @@ def direct_method(circuit : list[np.ndarray],
 
     logger.info("Generating lam constraints...")
     for key in lams:
-        for lam_idx, lam in enumerate(lams[key]):
-            for poly_idx, poly in enumerate(lam):
-                S_CVX, lam_constraints = PSD_constraint_generator(poly, symbol_var_dict, matrix_name='LAM_' + str(key) + str(lam_idx) + ';' + str(poly_idx), variables=variables)
+        u = 0
+        for lam in lams[key]:
+            i = 0
+            for poly in lam:
+                S_CVX, lam_constraints = PSD_constraint_generator(poly, symbol_var_dict, matrix_name='LAM_' + str(key) + str(u) + ';' + str(i), variables=variables)
                 cvx_matrices.append(S_CVX)
                 cvx_constraints += lam_constraints
-                logger.info(str(key) + str(lam_idx) + ';' + str(poly_idx) + " done.")
+                logger.info(str(key) + str(u) + ';' + str(i) + " done.")
+                i += 1
+            u += 1
     logger.info("lam constraints generated.")
 
     logger.info("Generating polynomial constraints...")
     for key in sym_polys:
-        for poly_idx, sym_poly in enumerate(sym_polys[key]):
-            Q_CVX, poly_constraint = PSD_constraint_generator(sym_poly, symbol_var_dict, matrix_name='POLY_' + str(key) + str(poly_idx), variables=variables)
+        u = 0
+        for sym_poly in sym_polys[key]:
+            Q_CVX, poly_constraint = PSD_constraint_generator(sym_poly, symbol_var_dict, matrix_name='POLY_' + str(key) + str(u), variables=variables)
             cvx_matrices.append(Q_CVX)
             cvx_constraints += poly_constraint
+            u += 1
         logger.info(str(key) + " done.")
     logger.info("Poly constraints generated.")
 
@@ -167,6 +176,7 @@ def direct_method(circuit : list[np.ndarray],
     for constraint in cvx_constraints: prob.add_constraint(constraint)
 
     logger.info("Solving problem...")
+    # TODO: Add type/infty/symPoly
     fail_barriers = [(unitary, 0) for unitary in unitaries]
     try:
         sys.stdout = LoggerWriter(picos_logger.info)
