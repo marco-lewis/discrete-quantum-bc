@@ -85,13 +85,14 @@ def PSD_constraint_generator(sym_polynomial : sym.Poly,
     vector_monomials = np.array([np.prod([x**k for x, k in zip(m.gens, mon)]) for mon in m.monoms()])
     num_of_monom = len(vector_monomials)
     Q_SYM = sym.MatrixSymbol(matrix_name, num_of_monom, num_of_monom)
-    vH_Q_v = sym.poly(vector_monomials.conj().T @ Q_SYM @ vector_monomials, variables)
+    Q_QUAD = sym.poly(vector_monomials.conj().T @ Q_SYM @ vector_monomials, variables)
 
     # Create cvx matrix and dictionary of monomials to cvx matrix terms
     Q_CVX = picos.HermitianVariable(name=matrix_name, shape=(num_of_monom, num_of_monom))
-    Q_cvx_coeffs = convert_exprs_of_matrix(vH_Q_v.coeffs(), Q_CVX)
-    Q_monom_to_cvx = dict(zip(vH_Q_v.monoms(), Q_cvx_coeffs))
+    Q_cvx_coeffs = convert_exprs_of_matrix(Q_QUAD.coeffs(), Q_CVX)
+    Q_monom_to_cvx = dict(zip(Q_QUAD.monoms(), Q_cvx_coeffs))
 
     # Link matrix variables to polynomial variables
     constraints = [Q_monom_to_cvx[key] == poly_monom_to_cvx[key] for key in Q_monom_to_cvx]
+    constraints += [poly_monom_to_cvx[key] == 0 for key in list(filter(lambda k: k not in Q_monom_to_cvx.keys(), poly_monom_to_cvx.keys()))]
     return Q_CVX, constraints

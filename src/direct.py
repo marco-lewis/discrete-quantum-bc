@@ -10,6 +10,7 @@ from iteration_utilities import grouper
 logger = logging.getLogger("direct")
 picos_logger = logging.getLogger("picos")
 
+# TODO: Make loops cleaner using enumerate, unpacking, ...
 def direct_method(circuit : list[np.ndarray],
                   g : dict[str, list[sym.Poly]],
                   Z : list[sym.Symbol],
@@ -159,7 +160,7 @@ def direct_method(circuit : list[np.ndarray],
             cvx_constraints += poly_constraint
             u += 1
         logger.info(str(key) + " done.")
-    logger.info("Poly constraints generated.")
+    logger.info("Polynomial constraints generated.")
 
     logger.info("Generating semidefinite constraints...")
     cvx_constraints += [M >> 0 for M in cvx_matrices]
