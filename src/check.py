@@ -33,7 +33,6 @@ def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
     # Difference
     z3_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, variables, domain=sym.CC)) for unitary, barrier in unitary_barrier_pairs]
     # Change
-    # TODO: Need to add functionality for when no changes should take place
     z3_changes = [_sympy_poly_to_z3(var_z3_dict, sym.poly(unitary_barrier_pairs[i2][1] - unitary_barrier_pairs[i1][1], variables, domain=sym.CC)) for i1, i2 in idx_pairs]
     # Inductive
     z3_k_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(unitary_barrier_pairs[i2][1].subs(zip(Z, np.dot(unitary_k, Z))) - unitary_barrier_pairs[i1][1], variables, domain=sym.CC)) for unitary_k, i1, i2 in chunks]
