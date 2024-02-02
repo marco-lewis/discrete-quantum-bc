@@ -103,7 +103,8 @@ def direct_method(circuit : list[np.ndarray],
         unitary_k = circuit_chunk[0]
         for unitary in circuit_chunk[1:]: unitary_k = np.dot(unitary, unitary_k)
         us = [u.tolist() for u in unitaries]
-        chunks.append((unitary_k, us.index(circuit_chunk[0].tolist()), us.index(circuit_chunk[-1].tolist())))
+        chunk = (unitary_k, us.index(circuit_chunk[0].tolist()), us.index(circuit_chunk[-1].tolist()))
+        if chunk not in chunks: chunks.append(chunk)
 
     chunk_id = 0
     for unitary_k, fst_idx, last_idx in chunks:
