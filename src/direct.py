@@ -35,6 +35,7 @@ def direct_method(circuit : list[np.ndarray],
             if np.array_equal(unitaries[ui], c):
                 unitary_idxs.append(ui) 
                 break
+
     logger.info("Barrier degree: " + str(barrier_degree) +
                 ", k: " + str(k) +
                 ", eps: " + str(eps) +
@@ -79,14 +80,10 @@ def direct_method(circuit : list[np.ndarray],
     idx_pairs = []
     lams[CHANGE] = []
     sym_polys[CHANGE] = []
-    # Iterate through circuit
     for i in range(len(circuit)-1):
-        # Fetch next item in circuit and match with respective index in unitaries
         idx = unitary_idxs[i]
         next_idx = unitary_idxs[i+1]
-        # Check if matched already
         if (idx, next_idx) not in idx_pairs and idx != next_idx:
-            # If not add to sym_polys[CHANGE] with respective barriers
             lam = [create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + CHANGE + str(idx) + "," + str(next_idx) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))]
             lams[CHANGE].append(lam)
             sym_polys[CHANGE].append(sym_poly_eq[CHANGE](barriers[idx], barriers[next_idx], lam, g))
@@ -102,6 +99,7 @@ def direct_method(circuit : list[np.ndarray],
     unique_chunks : list[tuple[np.ndarray]] = [circuit_divided[0]]
     for circuit_chunk in circuit_divided:
         if circuit_chunk not in unique_chunks: unique_chunks.append(circuit_chunk)
+
     for circuit_chunk in unique_chunks:
         unitary_k = circuit_chunk[0]
         for unitary in circuit_chunk[1:]: unitary_k = np.dot(unitary, unitary_k)
@@ -214,16 +212,19 @@ def direct_method(circuit : list[np.ndarray],
             except:
                 t = symbol_values[key] if abs(symbol_values[key]) > precision_bound else 0
         symbol_values[key] = t
+
     logger.debug("lambda polynomials")
     for key in lams:
         for idx, ls in enumerate(lams[key]):
             for jdx, poly in enumerate(ls):
                 logger.debug(key + str(idx) + ";" + str(jdx))
                 logger.debug(poly.subs(symbol_values))
+
     logger.debug("Convex Matrices")
     for m in cvx_matrices:
         logger.debug(m.name)
         logger.debug(m)
+
     barriers = [barrier.subs(symbol_values) for barrier in barriers]
     unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]] = list(zip(unitaries, barriers))
     logger.info("Barriers made.")
