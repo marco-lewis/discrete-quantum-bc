@@ -38,27 +38,26 @@ def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
     z3_k_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(unitary_barrier_pairs[i2][1].subs(zip(Z, np.dot(unitary_k, Z))) - unitary_barrier_pairs[i1][1], variables, domain=sym.CC)) for unitary_k, i1, i2 in chunks]
 
     z3_constraints : dict[str, z3.ExprRef] = {}
-    for key in g: z3_constraints[key] = [_sympy_poly_to_z3(var_z3_dict, p).r >= 0 for p in g[key]]
+    # for key in g: z3_constraints[key] = [_sympy_poly_to_z3(var_z3_dict, p).r >= 0 for p in g[key]]
+    # Alternative to find values of g when solving
+    for key in g: z3_constraints[key] = [z3.And(Complex('g' + key + str(idx)) == _sympy_poly_to_z3(var_z3_dict, poly), Complex('g' + key + str(idx)).r >= 0) for idx, poly in enumerate(g[key])]
 
     def _check(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3, delta=0.001):
         s.push()
         [s.add(z3.simplify(cond)) for cond in conds]
         logger.debug("Conditions in solver:\n" + str(s))
+        sat = ""
         if tool == Z3:
             logger.info("Using Z3")
             sat = s.check()
-            if sat == z3.unsat: logger.info("Constraint satisfied.")
-            elif sat == z3.unknown: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate constraint.")
-            elif sat == z3.sat:
-                m = s.model()
-                raise_error("Counter example: " + str(m))
+            model = str(s.model())
         elif tool == DREAL:
             logger.info("Using dreal")
-            sat, model = run_dreal(s, delta=delta, log_level=log_level)
-            if sat == DREAL_UNSAT: logger.info("Constraint satisfied.")
-            elif sat == DREAL_SAT: raise_error("Counter example: " + model)
-            elif sat == DREAL_UNKOWN: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate constraint.")
+            sat, model = run_dreal(s, delta=delta, log_level=log_level, timeout=600)
         else: logger.error("No tool selected")
+        if sat in [z3.unsat, DREAL_UNSAT]: logger.info("Constraint satisfied.")
+        elif sat in [z3.sat, DREAL_SAT]: raise_error("Counter example: " + model)
+        elif sat in [z3.unknown, DREAL_UNKOWN]: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate constraint.")
         s.pop()
     
     tactic = z3.Then('solve-eqs','smt')

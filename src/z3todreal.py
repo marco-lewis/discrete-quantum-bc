@@ -33,7 +33,7 @@ def run_dreal(s : z3.Solver, delta=0.001, log_level=logging.INFO, timeout=300):
         model = output[output.index("\n") + 1:-1]
         return sat, model
     except subprocess.TimeoutExpired as e:
-        logger.warn("dReal timed out after " + str(timeout) + "seconds.")
+        logger.warn("dReal timed out after " + str(timeout) + " seconds.")
         return DREAL_UNKOWN, []
     finally:
         os.remove(smt2_path)
