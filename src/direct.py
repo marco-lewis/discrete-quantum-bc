@@ -99,12 +99,15 @@ def direct_method(circuit : list[np.ndarray],
     sym_polys[INDUCTIVE] = []
     chunks : list[tuple[np.ndarray,int,int]] = []
     circuit_divided : list[tuple[np.ndarray]] = list(grouper(circuit, k))
+    unique_chunks : list[tuple[np.ndarray]] = [circuit_divided[0]]
     for circuit_chunk in circuit_divided:
+        if circuit_chunk not in unique_chunks: unique_chunks.append(circuit_chunk)
+    for circuit_chunk in unique_chunks:
         unitary_k = circuit_chunk[0]
         for unitary in circuit_chunk[1:]: unitary_k = np.dot(unitary, unitary_k)
         us = [u.tolist() for u in unitaries]
         chunk = (unitary_k, us.index(circuit_chunk[0].tolist()), us.index(circuit_chunk[-1].tolist()))
-        if chunk not in chunks: chunks.append(chunk)
+        chunks.append(chunk)
 
     chunk_id = 0
     for unitary_k, fst_idx, last_idx in chunks:
@@ -224,7 +227,7 @@ def direct_method(circuit : list[np.ndarray],
     barriers = [barrier.subs(symbol_values) for barrier in barriers]
     unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]] = list(zip(unitaries, barriers))
     logger.info("Barriers made.")
-    [logger.debug(str(u) + ":\n" + str(b)) for u, b in unitary_barrier_pairs]
+    [logger.info(str(u) + ":\n" + str(b)) for u, b in unitary_barrier_pairs]
     
     # 6. Check barrier works
     if check:
