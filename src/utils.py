@@ -13,6 +13,7 @@ logger = logging.getLogger("utils")
 DREAL = "dreal"
 DREAL_SAT = "delta-sat"
 DREAL_UNSAT = "unsat"
+DREAL_UNKOWN = "unkown"
 Z3 = "Z3"
 
 UNSAFE = 'unsafe'

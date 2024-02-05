@@ -57,6 +57,7 @@ def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
             sat, model = run_dreal(s, delta=delta, log_level=log_level)
             if sat == DREAL_UNSAT: logger.info("Constraint satisfied.")
             elif sat == DREAL_SAT: raise_error("Counter example: " + model)
+            elif sat == DREAL_UNKOWN: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate constraint.")
         else: logger.error("No tool selected")
         s.pop()
     
