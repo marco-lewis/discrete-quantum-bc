@@ -62,25 +62,26 @@ def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
     
     tactic = z3.Then('solve-eqs','smt')
     s = tactic.solver()
+    b = Complex('b')
     for unitary, z3_barrier in z3_barriers:
-        logger.info("Unitary\n" + str(unitary))
+        logger.info("Checking barrier for unitary\n" + str(unitary))
         logger.info("Check barrier real")
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3.Not(z3_barrier.i == 0)], tool=DREAL)
+        _check(s, [z3.And(z3_constraints[INVARIANT]), b == z3_barrier, z3.Not(b.i == 0)], tool=DREAL)
         logger.info("Check " + INIT)
-        _check(s, [z3.And(z3_constraints[INIT]), z3_barrier.r > 0], tool=DREAL)
+        _check(s, [z3.And(z3_constraints[INIT]), b == z3_barrier, b.r > 0], tool=DREAL)
         logger.info("Check " + UNSAFE)
-        _check(s, [z3.And(z3_constraints[UNSAFE]), z3_barrier.r < d], tool=DREAL)
+        _check(s, [z3.And(z3_constraints[UNSAFE]), b == z3_barrier, b.r < d], tool=DREAL)
     # TODO: Change delta (delta = 1e-20) or run z3 (hanging?)
     for idx, z3_diff in enumerate(z3_diffs):
         logger.info("Check " + DIFF + str(idx))
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_diff.r > eps], tool=DREAL, delta=1e-10)
+        _check(s, [z3.And(z3_constraints[INVARIANT]), b == z3_diff, b.r > eps], tool=DREAL)
     for idx, z3_change in enumerate(z3_changes):
         logger.info("Check " + CHANGE + str(idx))
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_change.r > gamma], tool=DREAL)
+        _check(s, [z3.And(z3_constraints[INVARIANT]), b == z3_change, b.r > gamma], tool=DREAL)
     # TODO: Change delta (delta = 1e-20) or run z3 (hanging?)
     for idx, z3_k_diff in enumerate(z3_k_diffs):
         logger.info("Check " + INDUCTIVE + str(idx))
-        _check(s, [z3.And(z3_constraints[INVARIANT]), z3_k_diff.r > 0], tool=DREAL, delta=1e-10)
+        _check(s, [z3.And(z3_constraints[INVARIANT]), b == z3_k_diff, b.r > 0], tool=DREAL)
     logger.info("All constraints checked.")
 
 # Based on: https://stackoverflow.com/a/38980538/19768075
