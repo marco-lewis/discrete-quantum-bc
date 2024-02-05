@@ -10,6 +10,7 @@ import sympy as sym
 n = 2
 N = 2**n
 eps = 0.01
+gamma = 0.01
 barrier_degree = 2
 k = 1
 
@@ -36,7 +37,7 @@ g_u = to_poly(g_u, variables)
 
 g_init = []
 g_init += [
-    Z[0] * sym.conjugate(Z[0]) - 0.9,
+    Z[0] * sym.conjugate(Z[0]) - 0.99,
     1 - sum_probs,
     sum_probs - 1,
     ]
@@ -53,4 +54,4 @@ g[UNSAFE] = g_u
 g[INIT] = g_init
 g[INVARIANT] = g_inv
 
-run_example(file_tag, circuit, g, Z, barrier_degree, eps, k, verbose, log_level, solver='mosek', check=True)
+run_example(file_tag, circuit, g, Z, barrier_degree, eps, gamma, k, verbose, log_level, solver='mosek', check=True)

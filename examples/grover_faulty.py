@@ -11,6 +11,7 @@ n = 2
 mark = 2
 N = 2**n
 eps = 0.01
+gamma = 0.01
 barrier_degree = 2
 k = 1
 
@@ -68,4 +69,4 @@ g[UNSAFE] = g_u
 g[INIT] = g_init
 g[INVARIANT] = g_inv
 
-run_example(file_tag, circuit, g, Z, barrier_degree, eps, k, verbose, log_level)
+run_example(file_tag, circuit, g, Z, barrier_degree, eps, gamma, k, verbose, log_level, check=True)
