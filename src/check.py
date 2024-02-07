@@ -24,8 +24,9 @@ def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
                   gamma = 0.01,
                   log_level = logging.INFO):
     logger.setLevel(log_level)
+    
     d = calculate_d(k, eps, gamma)
-    variables = Z + [z.conjugate() for z in Z]
+    variables = generate_variables(Z)
     var_z3_dict = dict(zip(Z, [Complex(var.name) for var in Z]))
     
     # Barriers

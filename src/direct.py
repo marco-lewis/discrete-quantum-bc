@@ -26,7 +26,7 @@ def direct_method(circuit : list[np.ndarray],
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
     
-    variables = Z + [z.conjugate() for z in Z]
+    variables = generate_variables(Z)
     d = calculate_d(k, eps, gamma)
     unitaries : list[np.ndarray] = list(np.unique(circuit, axis=0))
     unitary_idxs = []

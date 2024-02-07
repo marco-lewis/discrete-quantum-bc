@@ -35,6 +35,9 @@ def generate_unitary_k(k, unitary):
     for i in range(1,k): unitary_k = np.dot(unitary, unitary_k)
     return unitary_k
 
+def generate_variables(Z : list[sym.Symbol]):
+    return Z + [z.conjugate() for z in Z]
+
 def to_poly(expr_list, variables, domain=sym.CC):
     return [sym.poly(l, variables, domain=domain) for l in expr_list]
 
@@ -95,5 +98,6 @@ def PSD_constraint_generator(sym_polynomial : sym.Poly,
 
     # Link matrix variables to polynomial variables
     constraints = [Q_monom_to_cvx[key] == poly_monom_to_cvx[key] for key in Q_monom_to_cvx]
+    # Next line needed if using //2 for degree in m to capture remaining terms
     constraints += [poly_monom_to_cvx[key] == 0 for key in list(filter(lambda k: k not in Q_monom_to_cvx.keys(), poly_monom_to_cvx.keys()))]
     return Q_CVX, constraints
