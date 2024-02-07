@@ -4,3 +4,4 @@ discrete/
 logs/*.log
 logs/*/*.log
 .vscode/*
+src/testing.py
