@@ -66,80 +66,20 @@ def direct_method(circuit : Circuit,
     logger.debug(symbol_var_dict)
 
     # 3. Get matrix polynomial and constraints for semidefinite format
-    cvx_constraints = []
-    cvx_matrices : list[picos.HermitianVariable] = []
-
-    logger.info("Generating lam constraints...")
-    for key in lams:
-        for lam_idx, lam in enumerate(lams[key]):
-            for lam_poly_idx, poly in enumerate(lam):
-                S_CVX, lam_constraints = PSD_constraint_generator(poly, symbol_var_dict, matrix_name='LAM_' + str(key) + str(lam_idx) + ';' + str(lam_poly_idx), variables=variables)
-                cvx_matrices.append(S_CVX)
-                cvx_constraints += lam_constraints
-                logger.info(str(key) + str(lam_idx) + ';' + str(lam_poly_idx) + " done.")
-    logger.info("lam constraints generated.")
-
-    logger.info("Generating polynomial constraints...")
-    for key in sym_polys:
-        for poly_idx, sym_poly in enumerate(sym_polys[key]):
-            Q_CVX, poly_constraint = PSD_constraint_generator(sym_poly, symbol_var_dict, matrix_name='POLY_' + str(key) + str(poly_idx), variables=variables)
-            cvx_matrices.append(Q_CVX)
-            cvx_constraints += poly_constraint
-        logger.info(str(key) + " done.")
-    logger.info("Polynomial constraints generated.")
-
-    logger.info("Generating semidefinite constraints...")
-    cvx_constraints += [M >> 0 for M in cvx_matrices]
-    logger.info("Semidefinite constraints generated.")
-    logger.info("Constraints generated")
-    logger.info("Number of matrices: " + str(len(cvx_matrices)))
-    for M in cvx_matrices: logger.debug(M.name + ": " + str(M.shape))
-    logger.info("Number of constraitns: " + str(len(cvx_constraints)))
-    logger.debug(cvx_constraints)
+    cvx_matrices, cvx_constraints = get_cvx_format(lams, symbol_var_dict, variables, sym_polys)
 
     # 4. Solve using PICOS
-    prob = picos.Problem()
-    prob.minimize = picos.Constant(0)
-    for constraint in cvx_constraints: prob.add_constraint(constraint)
-
-    logger.info("Solving problem...")
-    # TODO: Add type/infty/symPoly
-    fail_barriers = [(unitary, 0) for unitary in unitaries]
-    try:
-        sys.stdout = LoggerWriter(picos_logger.info)
-        sys.stderr = LoggerWriter(picos_logger.error)
-        prob.solve(verbose=bool(verbose), solver=solver)
-    except Exception as e:
-        logger.exception(e)
-        return fail_barriers
-    finally:
-        sys.stdout = sys.__stdout__
-        sys.stderr = sys.__stderr__
-    logger.info("Problem status: " + prob.status)
-    if "infeasible" in prob.status or "unbounded" in prob.status:
-        logger.error("Cannot get barrier from problem.")
-        return fail_barriers
-    logger.info("Solution found.")
-
-    # 5. Return the barrier in a readable format
-    logger.info("Fetching values...")
-    symbols : list[sym.Symbol] = barrier_coeffs + lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[DIFF] + lam_coeffs[INDUCTIVE]
-    symbols = list(set(symbols))
-    symbols.sort(key = lambda symbol: symbol.name)
-    symbol_values = get_symbol_values(symbols, symbol_var_dict, precision_bound)
-
-    debug_print_lambda(lams, symbol_values)
-    debug_print_matrices(cvx_matrices)
-
-    unitary_barrier_pairs = make_unitary_barrier_pairs(barriers, symbol_values, unitaries)
-    logger.info("Barriers made.")
-    [logger.info(str(u) + ":\n" + str(b)) for u, b in unitary_barrier_pairs]
+    exit_prog = run_picos(cvx_constraints, solver, verbose)
+    if exit_prog: return [(unitary, 0) for unitary in unitaries]
     
+    # 5. Return the barrier in a readable format
+    barrier_certificate = fetch_values(barriers, unitaries, barrier_coeffs, lam_coeffs, symbol_var_dict, precision_bound, lams, cvx_matrices)
+
     # 6. Check barrier works
     if check:
         logger.info("Performing checks")
-        check_barrier(unitary_barrier_pairs, g, Z, idx_pairs, chunks, k, eps, gamma, log_level=log_level)
-    return unitary_barrier_pairs
+        check_barrier(barrier_certificate, g, Z, idx_pairs, chunks, k, eps, gamma, log_level=log_level)
+    return barrier_certificate
 
 def get_unitary_idxs(circuit : Circuit, unitaries : Unitaries) -> list[Idx]:
     unitary_idxs = []
@@ -210,6 +150,7 @@ def make_sym_polys(barriers : list[Barrier], lams : dict[str, LamList], g : Semi
     logger.info("Polynomials for " + INDUCTIVE + " made.")
     logger.debug(sym_polys[INDUCTIVE])
     logger.info("HSOS polynomials made.")
+    return sym_polys
 
 def get_lam_coeffs(lams : dict[str, LamList]) -> dict[str, list[sym.Symbol]]:
     lam_coeffs = {}
@@ -233,6 +174,62 @@ def make_symbol_var_dict(lam_coeffs : dict[str, list[sym.Symbol]], barrier_coeff
     for lam_symbols in lam_coeffs.values(): symbol_var_dict.update(symbols_to_cvx_var_dict(lam_symbols))
     symbol_var_dict.update(symbols_to_cvx_var_dict(barrier_coeffs))
     return symbol_var_dict
+
+def get_cvx_format(lams : dict[str, LamList], symbol_var_dict : dict[sym.Symbol, picos.ComplexVariable], variables : list[sym.Symbol], sym_polys : dict[str, list[sym.Poly]]) -> tuple[list[picos.HermitianVariable], picos.constraints.Constraint]:
+    cvx_constraints : list[picos.constraints.Constraint] = []
+    cvx_matrices : list[picos.HermitianVariable] = []
+
+    logger.info("Generating lam constraints...")
+    for key in lams:
+        for lam_idx, lam in enumerate(lams[key]):
+            for lam_poly_idx, poly in enumerate(lam):
+                S_CVX, lam_constraints = PSD_constraint_generator(poly, symbol_var_dict, matrix_name='LAM_' + str(key) + str(lam_idx) + ';' + str(lam_poly_idx), variables=variables)
+                cvx_matrices.append(S_CVX)
+                cvx_constraints += lam_constraints
+                logger.info(str(key) + str(lam_idx) + ';' + str(lam_poly_idx) + " done.")
+    logger.info("lam constraints generated.")
+
+    logger.info("Generating polynomial constraints...")
+    for key in sym_polys:
+        for poly_idx, sym_poly in enumerate(sym_polys[key]):
+            Q_CVX, poly_constraint = PSD_constraint_generator(sym_poly, symbol_var_dict, matrix_name='POLY_' + str(key) + str(poly_idx), variables=variables)
+            cvx_matrices.append(Q_CVX)
+            cvx_constraints += poly_constraint
+        logger.info(str(key) + " done.")
+    logger.info("Polynomial constraints generated.")
+
+    logger.info("Generating semidefinite constraints...")
+    cvx_constraints += [M >> 0 for M in cvx_matrices]
+    logger.info("Semidefinite constraints generated.")
+    logger.info("Constraints generated")
+    logger.info("Number of matrices: " + str(len(cvx_matrices)))
+    for M in cvx_matrices: logger.debug(M.name + ": " + str(M.shape))
+    logger.info("Number of constraitns: " + str(len(cvx_constraints)))
+    logger.debug(cvx_constraints)
+    return cvx_matrices, cvx_constraints
+
+def run_picos(cvx_constraints : list[picos.constraints.Constraint], solver : str, verbose : int) -> int:
+    prob = picos.Problem()
+    prob.minimize = picos.Constant(0)
+    for constraint in cvx_constraints: prob.add_constraint(constraint)
+
+    logger.info("Solving problem...")
+    try:
+        sys.stdout = LoggerWriter(picos_logger.info)
+        sys.stderr = LoggerWriter(picos_logger.error)
+        prob.solve(verbose=bool(verbose), solver=solver)
+    except Exception as e:
+        logger.exception(e)
+        return 1
+    finally:
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
+    logger.info("Problem status: " + prob.status)
+    if "infeasible" in prob.status or "unbounded" in prob.status:
+        logger.error("Cannot get barrier from problem.")
+        return 1
+    logger.info("Solution found.")
+    return 0
 
 def get_symbol_values(symbols : list[sym.Symbol], symbol_var_dict : dict[sym.Symbol, picos.ComplexVariable], precision_bound : float) -> dict[sym.Symbol, complex]:
     symbol_values : dict[sym.Symbol, complex] = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
@@ -261,6 +258,28 @@ def debug_print_matrices(cvx_matrices : list[picos.HermitianVariable]):
         logger.debug(m.name)
         logger.debug(m)
 
-def make_unitary_barrier_pairs(barriers, symbol_values, unitaries) -> list[tuple[np.ndarray, sym.Poly]]:
+def get_barrier_certificate_values(barriers, symbol_values, unitaries) -> list[tuple[np.ndarray, sym.Poly]]:
     barriers = [barrier.subs(symbol_values) for barrier in barriers]
     return list(zip(unitaries, barriers))
+
+def fetch_values(barriers : list[Barrier],
+                 unitaries : Unitaries,
+                 barrier_coeffs : list[sym.Symbol],
+                 lam_coeffs : dict[str, list[sym.Symbol]],
+                 symbol_var_dict : dict[sym.Symbol, picos.ComplexVariable],
+                 precision_bound : float,
+                 lams : dict[str, LamList],
+                 cvx_matrices : list[picos.HermitianVariable]) -> BarrierCertificate:
+    logger.info("Fetching values...")
+    symbols : list[sym.Symbol] = barrier_coeffs + lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[DIFF] + lam_coeffs[INDUCTIVE]
+    symbols = list(set(symbols))
+    symbols.sort(key = lambda symbol: symbol.name)
+    symbol_values = get_symbol_values(symbols, symbol_var_dict, precision_bound)
+
+    debug_print_lambda(lams, symbol_values)
+    debug_print_matrices(cvx_matrices)
+
+    barrier_certificate = get_barrier_certificate_values(barriers, symbol_values, unitaries)
+    logger.info("Barriers made.")
+    [logger.info(str(u) + ":\n" + str(b)) for u, b in barrier_certificate]
+    return barrier_certificate

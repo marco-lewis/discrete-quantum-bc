@@ -15,7 +15,7 @@ def raise_error(msg):
     logger.error(msg)
     sys.exit(1)
 
-def check_barrier(unitary_barrier_pairs : BarrierCertificate,
+def check_barrier(barrier_certificate : BarrierCertificate,
                   g : SemiAlgebraic,
                   Z : list[sym.Symbol] = [],
                   idx_pairs : list[tuple[int,int]] = [()],
@@ -30,13 +30,13 @@ def check_barrier(unitary_barrier_pairs : BarrierCertificate,
     var_z3_dict = dict(zip(Z, [Complex(var.name) for var in Z]))
     
     # Barriers
-    z3_barriers = [(unitary, _sympy_poly_to_z3(var_z3_dict, barrier)) for unitary, barrier in unitary_barrier_pairs]
+    z3_barriers = [(unitary, _sympy_poly_to_z3(var_z3_dict, barrier)) for unitary, barrier in barrier_certificate]
     # Difference
-    z3_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, variables, domain=sym.CC)) for unitary, barrier in unitary_barrier_pairs]
+    z3_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, variables, domain=sym.CC)) for unitary, barrier in barrier_certificate]
     # Change
-    z3_changes = [_sympy_poly_to_z3(var_z3_dict, sym.poly(unitary_barrier_pairs[i2][1] - unitary_barrier_pairs[i1][1], variables, domain=sym.CC)) for i1, i2 in idx_pairs]
+    z3_changes = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier_certificate[i2][1] - barrier_certificate[i1][1], variables, domain=sym.CC)) for i1, i2 in idx_pairs]
     # Inductive
-    z3_k_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(unitary_barrier_pairs[i2][1].subs(zip(Z, np.dot(unitary_k, Z))) - unitary_barrier_pairs[i1][1], variables, domain=sym.CC)) for unitary_k, i1, i2 in chunks]
+    z3_k_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier_certificate[i2][1].subs(zip(Z, np.dot(unitary_k, Z))) - barrier_certificate[i1][1], variables, domain=sym.CC)) for unitary_k, i1, i2 in chunks]
 
     z3_constraints : dict[str, z3.ExprRef] = {}
     for key in g: z3_constraints[key] = [_sympy_poly_to_z3(var_z3_dict, p).r >= 0 for p in g[key]]
