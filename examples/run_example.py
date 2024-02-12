@@ -1,9 +1,22 @@
 from src.direct import direct_method
 from src.log_settings import setup_logger
+from src.typings import *
 
 import logging
 
-def run_example(file_tag, circuit, g, Z, barrier_degree=2, eps=0.01, gamma=0.01, k=2, verbose=1, log_level=logging.INFO, precision_bound=1e-4, solver='cvxopt', check=False):
+def run_example(file_tag : str, 
+                circuit : Circuit,
+                g : SemiAlgebraic,
+                Z : list[sym.Symbol],
+                barrier_degree=2,
+                eps=0.01,
+                gamma=0.01,
+                k=2,
+                verbose=1,
+                log_level=logging.INFO,
+                precision_bound=1e-4,
+                solver='cvxopt',
+                check=False):
     logger = setup_logger(file_tag + ".log", log_level=log_level)
     try:
         logger.info("g defined")

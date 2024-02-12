@@ -1,5 +1,6 @@
 from src.check import check_barrier
 from src.log_settings import LoggerWriter
+from src.typings import *
 from src.utils import *
 
 import logging
@@ -11,8 +12,8 @@ logger = logging.getLogger("direct")
 picos_logger = logging.getLogger("picos")
 
 # TODO: Make loops cleaner using enumerate, unpacking, ...
-def direct_method(circuit : list[np.ndarray],
-                  g : dict[str, list[sym.Poly]],
+def direct_method(circuit : Circuit,
+                  g : SemiAlgebraic,
                   Z : list[sym.Symbol],
                   barrier_degree=2,
                   eps=0.01,
@@ -22,13 +23,13 @@ def direct_method(circuit : list[np.ndarray],
                   log_level=logging.INFO,
                   precision_bound=1e-10,
                   solver='cvxopt',
-                  check=False,):
+                  check=False,) -> BarrierCertificate:
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
     
     d = calculate_d(k, eps, gamma)
     variables = generate_variables(Z)
-    unitaries : list[np.ndarray] = list(np.unique(circuit, axis=0))
+    unitaries : Unitaries = list(np.unique(circuit, axis=0))
     unitary_idxs = get_unitary_idxs(circuit, unitaries)
 
     logger.info("Barrier degree: " + str(barrier_degree) +
@@ -38,14 +39,14 @@ def direct_method(circuit : list[np.ndarray],
                 ", d: " + str(d))
 
     # 1. Make polynomials
-    barriers : list[sym.Poly] = [create_polynomial(variables, deg=barrier_degree, coeff_tok='b' + str(j) + '_') for j in range(len(unitaries))]
+    barriers : list[Barrier] = [create_polynomial(variables, deg=barrier_degree, coeff_tok='b' + str(j) + '_') for j in range(len(unitaries))]
     logger.info("Barriers made.")
     logger.debug(barriers)
     
     idx_pairs = make_idx_pairs(circuit, unitary_idxs)
-    chunks : list[tuple[np.ndarray,int,int]] = make_chunks(circuit, unitaries, k)
+    chunks : list[Chunk] = make_chunks(circuit, unitaries, k)
 
-    lams : dict[str, list[list[sym.Poly]]] = {}
+    lams : dict[str, LamList] = {}
     sym_polys : dict[str, list[sym.Poly]] = {}
     sym_poly_eq = dict([
         (INIT, lambda B, lam, g: sym.poly(-B - np.dot(lam, g[INIT]), variables)),
@@ -180,7 +181,7 @@ def direct_method(circuit : list[np.ndarray],
         check_barrier(unitary_barrier_pairs, g, Z, idx_pairs, chunks, k, eps, gamma, log_level=log_level)
     return unitary_barrier_pairs
 
-def get_unitary_idxs(circuit : list[np.ndarray], unitaries : list[np.ndarray]):
+def get_unitary_idxs(circuit : Circuit, unitaries : Unitaries) -> list[Idx]:
     unitary_idxs = []
     for c in circuit:
         for ui in range(len(unitaries)):
@@ -189,7 +190,7 @@ def get_unitary_idxs(circuit : list[np.ndarray], unitaries : list[np.ndarray]):
                 break
     return unitary_idxs
 
-def make_idx_pairs(circuit: list[np.ndarray], unitary_idxs : list[int]):
+def make_idx_pairs(circuit: Circuit, unitary_idxs : list[Idx]):
     idx_pairs = []
     for i in range(len(circuit)-1):
         idx = unitary_idxs[i]
@@ -197,7 +198,7 @@ def make_idx_pairs(circuit: list[np.ndarray], unitary_idxs : list[int]):
         if (idx, next_idx) not in idx_pairs and idx != next_idx: idx_pairs.append((idx, next_idx))
     return idx_pairs
 
-def make_chunks(circuit: list[np.ndarray], unitaries: list[np.ndarray], k):
+def make_chunks(circuit: list[np.ndarray], unitaries: list[np.ndarray], k : int) -> list[Chunk]:
     circuit_divided : list[tuple[np.ndarray]] = list(grouper(circuit, k))
     unique_chunks : list[tuple[np.ndarray]] = [circuit_divided[0]]
     for circuit_chunk in circuit_divided:
@@ -212,24 +213,24 @@ def make_chunks(circuit: list[np.ndarray], unitaries: list[np.ndarray], k):
         chunks.append(chunk)
     return chunks
 
-def get_lam_coeffs(lams : dict[str, list[list[sym.Poly]]]) -> dict[str, list[sym.Symbol]]:
+def get_lam_coeffs(lams : dict[str, LamList]) -> dict[str, list[sym.Symbol]]:
     lam_coeffs = {}
     for key in lams: 
         lam_coeffs[key] = []
         for lam in lams[key]: lam_coeffs[key] += flatten([[next(iter(coeff.free_symbols)) for coeff in l.coeffs()] for l in lam])
     return lam_coeffs
 
-def get_barrier_coeffs(barriers : list[sym.Poly]) -> list[sym.Symbol]:
+def get_barrier_coeffs(barriers : list[Barrier]) -> list[sym.Symbol]:
     barrier_coeffs = []
     for barrier in barriers: barrier_coeffs += [next(iter(coeff.free_symbols)) for coeff in barrier.coeffs()]
     return barrier_coeffs
 
-def symbols_to_cvx_var_dict(symbols : list[sym.Symbol]):
+def symbols_to_cvx_var_dict(symbols : list[sym.Symbol]) -> dict[sym.Symbol, picos.ComplexVariable]:
     cvx_vars = [picos.ComplexVariable(name = s.name) for s in symbols]
     symbol_var_dict = dict(zip(symbols, cvx_vars))
     return symbol_var_dict
 
-def make_symbol_var_dict(lam_coeffs, barrier_coeffs) -> dict[sym.Symbol, picos.ComplexVariable]:
+def make_symbol_var_dict(lam_coeffs : dict[str, list[sym.Symbol]], barrier_coeffs : list[sym.Symbol]) -> dict[sym.Symbol, picos.ComplexVariable]:
     symbol_var_dict : dict[sym.Symbol, picos.ComplexVariable]= {}
     for lam_symbols in lam_coeffs.values(): symbol_var_dict.update(symbols_to_cvx_var_dict(lam_symbols))
     symbol_var_dict.update(symbols_to_cvx_var_dict(barrier_coeffs))
@@ -248,7 +249,7 @@ def get_symbol_values(symbols : list[sym.Symbol], symbol_var_dict : dict[sym.Sym
         symbol_values[key] = t
     return symbol_values
 
-def debug_print_lambda(lams, symbol_values):
+def debug_print_lambda(lams : dict[str, LamList], symbol_values : dict[sym.Symbol, complex]):
     logger.debug("lambda polynomials")
     for key in lams:
         for idx, ls in enumerate(lams[key]):
@@ -256,7 +257,7 @@ def debug_print_lambda(lams, symbol_values):
                 logger.debug(key + str(idx) + ";" + str(jdx))
                 logger.debug(poly.subs(symbol_values))
 
-def debug_print_matrices(cvx_matrices):
+def debug_print_matrices(cvx_matrices : list[picos.HermitianVariable]):
     logger.debug("Convex Matrices")
     for m in cvx_matrices:
         logger.debug(m.name)

@@ -1,4 +1,5 @@
 from src.complex import Complex, I
+from src.typings import *
 from src.utils import *
 from src.z3todreal import run_dreal
 
@@ -14,11 +15,11 @@ def raise_error(msg):
     logger.error(msg)
     sys.exit(1)
 
-def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
-                  g : dict[str, list[sym.Poly]],
+def check_barrier(unitary_barrier_pairs : BarrierCertificate,
+                  g : SemiAlgebraic,
                   Z : list[sym.Symbol] = [],
                   idx_pairs : list[tuple[int,int]] = [()],
-                  chunks : list[tuple[np.ndarray,int,int]] = [],
+                  chunks : list[Chunk] = [],
                   k = 1,
                   eps = 0.01,
                   gamma = 0.01,
