@@ -70,7 +70,7 @@ def find_barrier_certificate(circuit : Circuit,
 
     # 4. Solve using PICOS
     exit_prog = run_picos(cvx_constraints, solver, verbose)
-    if exit_prog: return [(unitary, 0) for unitary in unitaries]
+    if exit_prog: sys.exit(exit_prog)
     
     # 5. Return the barrier in a readable format
     barrier_certificate = fetch_values(barriers, unitaries, barrier_coeffs, lam_coeffs, symbol_var_dict, precision_bound, lams, cvx_matrices)
