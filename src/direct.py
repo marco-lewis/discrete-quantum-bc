@@ -76,22 +76,14 @@ def direct_method(circuit : Circuit,
     logger.debug(sym_polys[DIFF])
 
     # 1d. Change conditions
-    lams[CHANGE] = []
-    sym_polys[CHANGE] = []
-    for (idx, next_idx) in idx_pairs:
-        lam = [create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + CHANGE + str(idx) + "," + str(next_idx) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))]
-        lams[CHANGE].append(lam)
-        sym_polys[CHANGE].append(sym_poly_eq[CHANGE](barriers[idx], barriers[next_idx], lam, g))
+    lams[CHANGE] = [[create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + CHANGE + str(idx) + "," + str(next_idx) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))] for (idx, next_idx) in idx_pairs]
+    sym_polys[CHANGE] = [sym_poly_eq[CHANGE](barriers[idx], barriers[next_idx], lam, g) for (idx, next_idx), lam in zip(idx_pairs, lams[CHANGE])]
     logger.info("Polynomials for " + CHANGE + " made.")
     logger.debug(sym_polys[CHANGE])
 
     # 1e. Inductive conditions
-    lams[INDUCTIVE] = []
-    sym_polys[INDUCTIVE] = []
-    for chunk_id, (unitary_k, fst_idx, last_idx) in enumerate(chunks):
-        lam = [create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + INDUCTIVE + str(chunk_id) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))]
-        lams[INDUCTIVE].append(lam)
-        sym_polys[INDUCTIVE].append(sym_poly_eq[INDUCTIVE](barriers[fst_idx], barriers[last_idx], unitary_k, lam, g))
+    lams[INDUCTIVE] = [[create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + INDUCTIVE + str(chunk_id) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))] for chunk_id, (unitary_k, fst_idx, last_idx) in enumerate(chunks)]
+    sym_polys[INDUCTIVE] = [sym_poly_eq[INDUCTIVE](barriers[fst_idx], barriers[last_idx], unitary_k, lam, g) for (unitary_k, fst_idx, last_idx), lam in zip(chunks, lams[INDUCTIVE])]
     logger.info("Polynomials for " + INDUCTIVE + " made.")
     logger.debug(sym_polys[INDUCTIVE])
     logger.info("HSOS polynomials made.")
