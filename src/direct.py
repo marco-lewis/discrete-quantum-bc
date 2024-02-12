@@ -26,8 +26,8 @@ def direct_method(circuit : list[np.ndarray],
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
     
-    variables = generate_variables(Z)
     d = calculate_d(k, eps, gamma)
+    variables = generate_variables(Z)
     unitaries : list[np.ndarray] = list(np.unique(circuit, axis=0))
     unitary_idxs = []
     for c in circuit:
@@ -204,7 +204,7 @@ def direct_method(circuit : list[np.ndarray],
     symbols.sort(key = lambda symbol: symbol.name)
     symbol_values : dict[sym.Symbol, complex] = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
     for key in symbol_values:
-        if not(symbol_values[key]): t = 0 
+        if not(symbol_values[key]): t = 0
         else:
             try:
                 t = symbol_values[key].real if abs(symbol_values[key].real) > precision_bound else 0
