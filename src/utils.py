@@ -53,11 +53,6 @@ def create_polynomial(variables, deg=2, coeff_tok='a', monomial=False) -> sym.Po
     p = np.sum([coeffs[i] * p[i] for i in range(len(p))])
     return sym.poly(p, variables, domain=K)
 
-def symbols_to_cvx_var_dict(symbols : list[sym.Symbol]):
-    cvx_vars = [picos.ComplexVariable(name = s.name) for s in symbols]
-    symbol_var_dict = dict(zip(symbols, cvx_vars))
-    return symbol_var_dict
-
 def convert_exprs(exprs : list[sym.Poly], symbol_var_dict : dict[sym.Symbol, picos.ComplexVariable]):
     def convert(expr):
         if isinstance(expr, sym.Add): return picos.sum([convert(arg) for arg in expr.args])
