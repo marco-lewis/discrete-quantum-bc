@@ -85,7 +85,7 @@ def run_solver(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3, delta=0.001):
     if tool == Z3:
         logger.info("Using Z3")
         sat = s.check()
-        model = str(s.model()) if s == z3.sat else []
+        model = str(s.model()) if sat == z3.sat else str([])
     elif tool == DREAL:
         logger.info("Using dreal")
         sat, model = run_dreal(s, delta=delta, log_level=logger.level, timeout=300)
