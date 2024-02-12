@@ -1,4 +1,4 @@
-from src.direct import direct_method
+from src.direct import find_barrier_certificate
 from src.log_settings import setup_logger
 from src.typings import *
 
@@ -22,10 +22,10 @@ def run_example(file_tag : str,
         logger.info("g defined")
         logger.debug(g)
         
-        barrier = direct_method(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, gamma=gamma, k=k, verbose=verbose, log_level=log_level, precision_bound=precision_bound, solver=solver, check=check)
-        logger.info("Barriers: " +  str(barrier))
+        barrier_certificate = find_barrier_certificate(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, gamma=gamma, k=k, verbose=verbose, log_level=log_level, precision_bound=precision_bound, solver=solver, check=check)
+        logger.info("Barrier certificate: " +  str(barrier_certificate))
         with open("logs/barrier_" + file_tag + ".log", 'w') as file:
-            file.write(repr(barrier))
+            file.write(repr(barrier_certificate))
         logger.info("Barriers stored")
     except KeyboardInterrupt as e:
         logger.exception(e)

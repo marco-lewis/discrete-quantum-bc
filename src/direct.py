@@ -12,7 +12,7 @@ logger = logging.getLogger("direct")
 picos_logger = logging.getLogger("picos")
 
 # TODO: Make loops cleaner using enumerate, unpacking, ...
-def direct_method(circuit : Circuit,
+def find_barrier_certificate(circuit : Circuit,
                   g : SemiAlgebraic,
                   Z : list[sym.Symbol],
                   barrier_degree=2,
@@ -43,10 +43,11 @@ def direct_method(circuit : Circuit,
     logger.info("Barriers made.")
     logger.debug(barriers)
     
+    logger.info("Setting up lambda terms and utilities...")
     idx_pairs = make_idx_pairs(circuit, unitary_idxs)
     chunks : list[Chunk] = make_chunks(circuit, unitaries, k)
-
     lams = make_lambdas(variables, g, unitaries, idx_pairs, chunks)
+    logger.info("Lambda functions and utilities set up.")
     sym_poly_eq = dict([
         (INIT, lambda B, lam, g: sym.poly(-B - np.dot(lam, g[INIT]), variables)),
         (UNSAFE, lambda B, lam, g: sym.poly(B - d - np.dot(lam, g[UNSAFE]), variables)),
@@ -57,7 +58,6 @@ def direct_method(circuit : Circuit,
     sym_polys = make_sym_polys(barriers, lams, g, unitaries, idx_pairs, chunks, sym_poly_eq)
 
     # 2. Get coefficients out to make symbol dictionary
-    # TODO: Fix typing in this section (optional)
     logger.info("Fetching coefficients.")
     lam_coeffs = get_lam_coeffs(lams)
     barrier_coeffs = get_barrier_coeffs(barriers)
@@ -125,27 +125,22 @@ def make_lambdas(variables : list[sym.Symbol], g : SemiAlgebraic, unitaries : Un
 def make_sym_polys(barriers : list[Barrier], lams : dict[str, LamList], g : SemiAlgebraic, unitaries : Unitaries, idx_pairs : list[tuple[int,int]], chunks : list[Chunk], sym_poly_eq) -> dict[str, list[sym.Poly]]:
     sym_polys : dict[str, list[sym.Poly]] = {}    
     logger.info("Making HSOS polynomials...")
-    # 1a. Initial condition
     sym_polys[INIT] = [sym_poly_eq[INIT](barriers[0], lams[INIT][0], g)]
     logger.info("Polynomial for " + INIT + " made.")
     logger.debug(sym_polys[INIT])
 
-    # 1b. Unsafe conditions
     sym_polys[UNSAFE] = [sym_poly_eq[UNSAFE](barriers[j], lams[UNSAFE][j], g) for j in range(len(unitaries))]
     logger.info("Polynomial for " + UNSAFE + " made.")
     logger.debug(sym_polys[UNSAFE])
 
-    # 1c. Diff conditions
     sym_polys[DIFF] = [sym_poly_eq[DIFF](barriers[j], unitaries[j], lams[DIFF][j], g) for j in range(len(unitaries))]
     logger.info("Polynomials for " + DIFF + " made.")
     logger.debug(sym_polys[DIFF])
 
-    # 1d. Change conditions
     sym_polys[CHANGE] = [sym_poly_eq[CHANGE](barriers[idx], barriers[next_idx], lam, g) for (idx, next_idx), lam in zip(idx_pairs, lams[CHANGE])]
     logger.info("Polynomials for " + CHANGE + " made.")
     logger.debug(sym_polys[CHANGE])
 
-    # 1e. Inductive conditions
     sym_polys[INDUCTIVE] = [sym_poly_eq[INDUCTIVE](barriers[fst_idx], barriers[last_idx], unitary_k, lam, g) for (unitary_k, fst_idx, last_idx), lam in zip(chunks, lams[INDUCTIVE])]
     logger.info("Polynomials for " + INDUCTIVE + " made.")
     logger.debug(sym_polys[INDUCTIVE])
