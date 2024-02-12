@@ -38,7 +38,7 @@ def run_dreal(s : z3.Solver, delta=0.001, log_level=logging.INFO, timeout=300):
     finally:
         os.remove(smt2_path)
 
-def z3_to_dreal(s: z3.Solver):
+def z3_to_dreal(s : z3.Solver):
     smt2 = s.to_smt2()
     smt2 = smt2[:smt2.index("(")] + ";" + smt2[smt2.index("("):]
     smt2 = smt2[:smt2.index("(check-sat)")]

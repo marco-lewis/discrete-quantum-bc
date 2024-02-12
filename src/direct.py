@@ -23,7 +23,7 @@ def find_barrier_certificate(circuit : Circuit,
                   log_level=logging.INFO,
                   precision_bound=1e-10,
                   solver='cvxopt',
-                  check=False,) -> BarrierCertificate:
+                  check=False) -> BarrierCertificate:
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
     
@@ -45,7 +45,7 @@ def find_barrier_certificate(circuit : Circuit,
     
     logger.info("Setting up lambda terms and utilities...")
     idx_pairs = make_idx_pairs(circuit, unitary_idxs)
-    chunks : list[Chunk] = make_chunks(circuit, unitaries, k)
+    chunks = make_chunks(circuit, unitaries, k)
     lams = make_lambdas(variables, g, unitaries, idx_pairs, chunks)
     logger.info("Lambda functions and utilities set up.")
     sym_poly_eq = dict([
@@ -90,7 +90,7 @@ def get_unitary_idxs(circuit : Circuit, unitaries : Unitaries) -> list[Idx]:
                 break
     return unitary_idxs
 
-def make_idx_pairs(circuit: Circuit, unitary_idxs : list[Idx]):
+def make_idx_pairs(circuit : Circuit, unitary_idxs : list[Idx]) -> list[tuple[int, int]]:
     idx_pairs = []
     for i in range(len(circuit)-1):
         idx = unitary_idxs[i]
@@ -98,7 +98,7 @@ def make_idx_pairs(circuit: Circuit, unitary_idxs : list[Idx]):
         if (idx, next_idx) not in idx_pairs and idx != next_idx: idx_pairs.append((idx, next_idx))
     return idx_pairs
 
-def make_chunks(circuit: list[np.ndarray], unitaries: list[np.ndarray], k : int) -> list[Chunk]:
+def make_chunks(circuit : list[np.ndarray], unitaries : list[np.ndarray], k : int) -> list[Chunk]:
     circuit_divided : list[tuple[np.ndarray]] = list(grouper(circuit, k))
     unique_chunks : list[tuple[np.ndarray]] = [circuit_divided[0]]
     for circuit_chunk in circuit_divided:

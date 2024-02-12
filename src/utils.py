@@ -32,7 +32,7 @@ def flatten(matrix): return [item for row in matrix for item in row]
 def calculate_d(k = 1, eps = 0.01, gamma = 0.01):
     return (k + 1) * (eps + gamma)
 
-def generate_unitary_k(k, unitary : Unitary):
+def generate_unitary_k(k : int, unitary : Unitary):
     unitary_k = unitary
     for i in range(1,k): unitary_k = np.dot(unitary, unitary_k)
     return unitary_k
@@ -43,7 +43,7 @@ def generate_variables(Z : list[sym.Symbol]):
 def to_poly(expr_list : list[sym.Poly], variables : list[sym.Symbol], domain=sym.CC):
     return [sym.poly(l, variables, domain=domain) for l in expr_list]
 
-def create_polynomial(variables, deg=2, coeff_tok='a', monomial=False) -> sym.Poly:
+def create_polynomial(variables : list[sym.Symbol], deg=2, coeff_tok='a', monomial=False) -> sym.Poly:
     p = []
     for d in range(deg + 1): p += itertools.combinations_with_replacement(variables, d)
     p = [np.prod([t for t in term]) for term in p]
