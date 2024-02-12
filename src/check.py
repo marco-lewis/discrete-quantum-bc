@@ -49,22 +49,22 @@ def check_barrier(unitary_barrier_pairs : list[tuple[np.ndarray, sym.Poly]],
     for unitary, z3_barrier in z3_barriers:
         logger.info("Checking barrier for unitary\n" + str(unitary))
         logger.info("Check barrier real")
-        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_barrier, z3.Not(constraint_val.i == 0)], tool=DREAL)
+        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_barrier, z3.Not(constraint_val.i == 0)], tool=DREAL, log_level=log_level)
         logger.info("Check " + INIT)
-        run_solver(s, [z3.And(z3_constraints[INIT]), constraint_val == z3_barrier, constraint_val.r > 0], tool=DREAL)
+        run_solver(s, [z3.And(z3_constraints[INIT]), constraint_val == z3_barrier, constraint_val.r > 0], tool=DREAL, log_level=log_level)
         logger.info("Check " + UNSAFE)
-        run_solver(s, [z3.And(z3_constraints[UNSAFE]), constraint_val == z3_barrier, constraint_val.r < d], tool=DREAL)
+        run_solver(s, [z3.And(z3_constraints[UNSAFE]), constraint_val == z3_barrier, constraint_val.r < d], tool=DREAL, log_level=log_level)
     # TODO: Change delta (delta = 1e-20) or run z3 (hanging?)
     for idx, z3_diff in enumerate(z3_diffs):
         logger.info("Check " + DIFF + str(idx))
-        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_diff, constraint_val.r > eps], tool=DREAL)
+        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_diff, constraint_val.r > eps], tool=DREAL, log_level=log_level)
     for idx, z3_change in enumerate(z3_changes):
         logger.info("Check " + CHANGE + str(idx))
-        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_change, constraint_val.r > gamma], tool=DREAL)
+        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_change, constraint_val.r > gamma], tool=DREAL, log_level=log_level)
     # TODO: Change delta (delta = 1e-20) or run z3 (hanging?)
     for idx, z3_k_diff in enumerate(z3_k_diffs):
         logger.info("Check " + INDUCTIVE + str(idx))
-        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_k_diff, constraint_val.r > 0], tool=DREAL)
+        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_k_diff, constraint_val.r > 0], tool=DREAL, log_level=log_level)
     logger.info("All constraints checked.")
 
 def run_solver(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3, delta=0.001, log_level=logging.INFO):
