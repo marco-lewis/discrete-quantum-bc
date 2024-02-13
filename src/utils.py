@@ -40,7 +40,7 @@ def generate_unitary_k(k : int, unitary : Unitary):
 def generate_variables(Z : list[sym.Symbol]):
     return Z + [z.conjugate() for z in Z]
 
-def to_poly(expr_list : list[sym.Poly], variables : list[sym.Symbol], domain=sym.CC):
+def poly_list(expr_list : list[sym.Poly], variables : list[sym.Symbol], domain=sym.CC) -> list[sym.Poly]:
     return [sym.poly(l, variables, domain=domain) for l in expr_list]
 
 def create_polynomial(variables : list[sym.Symbol], deg=2, coeff_tok='a', monomial=False) -> sym.Poly:

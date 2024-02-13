@@ -9,8 +9,8 @@ import sympy as sym
 # 0. Inputs, variable definitions and constants
 n = 2
 N = 2**n
-eps = 0.01
-gamma = 0.01
+eps = 0.1
+gamma = 0
 barrier_degree = 2
 k = 1
 
@@ -33,7 +33,7 @@ g_u = [
     1 - sum_probs,
     sum_probs - 1,
 ]
-g_u = to_poly(g_u, variables)
+g_u = poly_list(g_u, variables)
 
 g_init = []
 g_init += [
@@ -41,13 +41,13 @@ g_init += [
     1 - sum_probs,
     sum_probs - 1,
     ]
-g_init = to_poly(g_init, variables)
+g_init = poly_list(g_init, variables)
 
 g_inv = [
     1 - sum_probs,
     sum_probs - 1,
 ]
-g_inv = to_poly(g_inv, variables)
+g_inv = poly_list(g_inv, variables)
 
 g = {}
 g[UNSAFE] = g_u

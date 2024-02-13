@@ -43,7 +43,7 @@ g_u = [
     1 - sum_probs,
     sum_probs - 1,
 ]
-g_u = to_poly(g_u, variables)
+g_u = poly_list(g_u, variables)
 
 # Start close to superposition
 err = 10 ** -(n+1)
@@ -56,13 +56,13 @@ g_init += [
     1 - sum_probs,
     sum_probs - 1,
     ]
-g_init = to_poly(g_init, variables)
+g_init = poly_list(g_init, variables)
 
 g_inv = [
     1 - sum_probs,
     sum_probs - 1,
 ]
-g_inv = to_poly(g_inv, variables)
+g_inv = poly_list(g_inv, variables)
 
 g = {}
 g[UNSAFE] = g_u
