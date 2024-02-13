@@ -16,7 +16,7 @@ def raise_error(msg):
     sys.exit(1)
 
 def check_barrier(barrier_certificate : BarrierCertificate,
-                  g : SemiAlgebraic,
+                  g : SemiAlgebraicDict,
                   Z : list[sym.Symbol] = [],
                   idx_pairs : list[tuple[int,int]] = [()],
                   chunks : list[Chunk] = [],

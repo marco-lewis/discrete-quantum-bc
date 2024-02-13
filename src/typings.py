@@ -12,4 +12,5 @@ LamPoly = sym.Poly
 LamVector = list[LamPoly]
 LamList = list[LamVector]
 Idx = int
-SemiAlgebraic = dict[str, list[sym.Poly]]
+SemiAlgebraic = list[sym.Poly]
+SemiAlgebraicDict = dict[str, SemiAlgebraic]

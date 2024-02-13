@@ -1,4 +1,4 @@
-from src.direct import find_barrier_certificate
+from src.find_barrier_certificate import find_barrier_certificate
 from src.log_settings import setup_logger
 from src.typings import *
 
@@ -6,7 +6,7 @@ import logging
 
 def run_example(file_tag : str, 
                 circuit : Circuit,
-                g : SemiAlgebraic,
+                g : SemiAlgebraicDict,
                 Z : list[sym.Symbol],
                 barrier_degree=2,
                 eps=0.01,
