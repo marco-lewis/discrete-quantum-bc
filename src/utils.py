@@ -1,6 +1,5 @@
 from src.typings import *
 
-from collections import defaultdict
 from functools import reduce
 import itertools
 import logging

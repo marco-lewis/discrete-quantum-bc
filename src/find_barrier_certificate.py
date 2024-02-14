@@ -3,6 +3,7 @@ from src.log_settings import LoggerWriter
 from src.typings import *
 from src.utils import *
 
+from collections import defaultdict
 import logging
 import sys
 
