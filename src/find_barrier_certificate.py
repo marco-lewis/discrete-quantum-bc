@@ -9,7 +9,7 @@ import sys
 
 from iteration_utilities import grouper
 
-logger = logging.getLogger("direct")
+logger = logging.getLogger("findbc")
 picos_logger = logging.getLogger("picos")
 
 # TODO: Make loops cleaner using enumerate, unpacking, ...
