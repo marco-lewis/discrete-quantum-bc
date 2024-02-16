@@ -15,7 +15,7 @@ barrier_degree = 2
 k = 2
 
 log_level=logging.INFO
-file_tag = "hadamard" + str(n) + "k" + str(k)
+file_tag = "xgate" + str(n) + "k" + str(k)
 verbose = 1
 
 xgate = np.array([[0,1],[1,0]])
