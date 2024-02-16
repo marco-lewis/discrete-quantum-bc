@@ -32,7 +32,7 @@ def check_barrier(barrier_certificate : BarrierCertificate,
     # Barriers
     z3_barriers = [(unitary, _sympy_poly_to_z3(var_z3_dict, barrier)) for unitary, barrier in barrier_certificate]
     # Difference
-    z3_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, variables, domain=sym.CC)) for unitary, barrier in barrier_certificate]
+    z3_diffs = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier.subs(zip(Z, np.dot(unitary, Z))) - barrier, variables, domain=sym.CC)) for unitary, barrier in barrier_certificate] if k > 1 else []
     # Change
     z3_changes = [_sympy_poly_to_z3(var_z3_dict, sym.poly(barrier_certificate[i2][1] - barrier_certificate[i1][1], variables, domain=sym.CC)) for i1, i2 in idx_pairs]
     # Inductive

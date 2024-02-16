@@ -56,7 +56,7 @@ def find_barrier_certificate(circuit : Circuit,
         (CHANGE, lambda B, Bnext, lam, g: sym.poly(-Bnext + B - np.dot(lam, g[INVARIANT]) + gamma, variables)),
         (INDUCTIVE, lambda B, Bk, fk, lam, g: sym.poly(-Bk.subs(zip(Z, np.dot(fk, Z))) + B - np.dot(lam, g[INVARIANT]), variables)),
         ])
-    sym_polys = make_sym_polys(barriers, lams, g, unitaries, idx_pairs, chunks, sym_poly_eq)
+    sym_polys = make_sym_polys(barriers, lams, g, unitaries, idx_pairs, chunks, k, sym_poly_eq)
 
     # 2. Get coefficients out to make symbol dictionary
     logger.info("Fetching coefficients.")
@@ -123,7 +123,7 @@ def make_lambdas(variables : list[sym.Symbol], g : SemiAlgebraicDict, unitaries 
     lams[INDUCTIVE] = [[create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + INDUCTIVE + str(chunk_id) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))] for chunk_id, _ in enumerate(chunks)]
     return lams
 
-def make_sym_polys(barriers : list[Barrier], lams : dict[str, LamList], g : SemiAlgebraicDict, unitaries : Unitaries, idx_pairs : list[tuple[int,int]], chunks : list[Chunk], sym_poly_eq) -> dict[str, list[sym.Poly]]:
+def make_sym_polys(barriers : list[Barrier], lams : dict[str, LamList], g : SemiAlgebraicDict, unitaries : Unitaries, idx_pairs : list[tuple[int,int]], chunks : list[Chunk], k : int, sym_poly_eq : dict[callable]) -> dict[str, list[sym.Poly]]:
     sym_polys : dict[str, list[sym.Poly]] = {}    
     logger.info("Making HSOS polynomials...")
     sym_polys[INIT] = [sym_poly_eq[INIT](barriers[0], lams[INIT][0], g)]
@@ -134,13 +134,17 @@ def make_sym_polys(barriers : list[Barrier], lams : dict[str, LamList], g : Semi
     logger.info("Polynomial for " + UNSAFE + " made.")
     logger.debug(sym_polys[UNSAFE])
 
-    sym_polys[DIFF] = [sym_poly_eq[DIFF](barriers[j], unitaries[j], lams[DIFF][j], g) for j in range(len(unitaries))]
-    logger.info("Polynomials for " + DIFF + " made.")
-    logger.debug(sym_polys[DIFF])
+    if k == 1: logger.info("No polynomials for " + DIFF + " need to be made (k=1).")
+    else:
+        sym_polys[DIFF] = [sym_poly_eq[DIFF](barriers[j], unitaries[j], lams[DIFF][j], g) for j in range(len(unitaries))]
+        logger.info("Polynomials for " + DIFF + " made.")
+        logger.debug(sym_polys[DIFF])
 
-    sym_polys[CHANGE] = [sym_poly_eq[CHANGE](barriers[idx], barriers[next_idx], lam, g) for (idx, next_idx), lam in zip(idx_pairs, lams[CHANGE])]
-    logger.info("Polynomials for " + CHANGE + " made.")
-    logger.debug(sym_polys[CHANGE])
+    if idx_pairs == []: logger.info("No polynomials for " + CHANGE + " need to be made (only one unitary).")
+    else:
+        sym_polys[CHANGE] = [sym_poly_eq[CHANGE](barriers[idx], barriers[next_idx], lam, g) for (idx, next_idx), lam in zip(idx_pairs, lams[CHANGE])]
+        logger.info("Polynomials for " + CHANGE + " made.")
+        logger.debug(sym_polys[CHANGE])
 
     sym_polys[INDUCTIVE] = [sym_poly_eq[INDUCTIVE](barriers[fst_idx], barriers[last_idx], unitary_k, lam, g) for (unitary_k, fst_idx, last_idx), lam in zip(chunks, lams[INDUCTIVE])]
     logger.info("Polynomials for " + INDUCTIVE + " made.")
