@@ -60,7 +60,6 @@ def run_checks(z3_barriers, z3_diffs, z3_changes, z3_k_diffs, z3_constraints, k=
         logger.info("Check " + UNSAFE)
         run_solver(s, [z3.And(z3_constraints[UNSAFE]), constraint_val == z3_barrier, constraint_val.r < d], tool=DREAL)
 
-    # TODO: Change delta (delta = 1e-20) or run z3 (hanging?)
     for idx, z3_diff in enumerate(z3_diffs):
         logger.info("Check " + DIFF + str(idx))
         run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_diff, constraint_val.r > eps], tool=DREAL)
@@ -69,14 +68,13 @@ def run_checks(z3_barriers, z3_diffs, z3_changes, z3_k_diffs, z3_constraints, k=
         logger.info("Check " + CHANGE + str(idx))
         run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_change, constraint_val.r > gamma], tool=DREAL)
 
-    # TODO: Change delta (delta = 1e-20) or run z3 (hanging?)
     for idx, z3_k_diff in enumerate(z3_k_diffs):
         logger.info("Check " + INDUCTIVE + str(idx))
         run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_k_diff, constraint_val.r > 0], tool=DREAL)
     logger.info("All constraints checked.")
 
 
-def run_solver(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3, delta=0.001):
+def run_solver(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3, delta=0.001, timeout=300):
     s.push()
     [s.add(z3.simplify(cond)) for cond in conds]
     logger.debug("Conditions in solver:\n" + str(s))
@@ -88,7 +86,7 @@ def run_solver(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3, delta=0.001):
         model = str(s.model()) if sat == z3.sat else str([])
     elif tool == DREAL:
         logger.info("Using dreal")
-        sat, model = run_dreal(s, delta=delta, log_level=logger.level, timeout=300)
+        sat, model = run_dreal(s, delta=delta, log_level=logger.level, timeout=timeout)
     else: raise_error("No valid tool selected. Use Z3 or dReal")
 
     if sat in [z3.unsat, DREAL_UNSAT]: logger.info("Constraint satisfied.")

@@ -33,9 +33,9 @@ g_inv = [
     sum_probs - 1,
 ]
 g_inv = poly_list(g_inv, variables)
-# Might need larger delta value
+
 experiment = 1
-g_u = [Z[experiment] * sym.conjugate(Z[experiment]) - 0.6]
+g_u = [Z[experiment] * sym.conjugate(Z[experiment]) - 0.52]
 g_u = poly_list(g_u, variables)
 
 g_init = [
