@@ -29,18 +29,22 @@ diffusion_oracle = 2*temp - diffusion_oracle
 hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 hadamard_n = lambda n: hadamard if n == 1 else np.kron(hadamard, hadamard_n(n-1))
 diffusion = np.dot(hadamard_n(n), np.dot(diffusion_oracle, hadamard_n(n)))
-circuit = [oracle, diffusion]
+circuit = [oracle, diffusion] * 2
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
 
 sum_probs = np.sum([Z[j] * sym.conjugate(Z[j]) for j in range(N)])
 
-# Unmarked states will never be likely (>50%)
-g_u = [
-    - np.prod([(Z[i] * sym.conjugate(Z[i]) - 0.5) if i != mark else 1 for i in range(N)]),
+g_inv = [
     1 - sum_probs,
     sum_probs - 1,
+]
+g_inv = poly_list(g_inv, variables)
+
+# Unmarked states will never be very likely (>90%)
+g_u = [
+    Z[0] * sym.conjugate(Z[0]) - 0.9,
 ]
 g_u = poly_list(g_u, variables)
 
@@ -50,21 +54,11 @@ g_init += [z * sym.conjugate(z) - (1/N - err) for z in Z]
 g_init += [(1/N + err) - z * sym.conjugate(z) for z in Z]
 g_init += [-1j * (z - sym.conjugate(z)) for z in Z]
 g_init += [ 1j * (z - sym.conjugate(z)) for z in Z]
-g_init += [
-    1 - sum_probs,
-    sum_probs - 1,
-    ]
 g_init = poly_list(g_init, variables)
 
-g_inv = [
-    1 - sum_probs,
-    sum_probs - 1,
-]
-g_inv = poly_list(g_inv, variables)
-
 g = {}
-g[UNSAFE] = g_u
-g[INIT] = g_init
+g[UNSAFE] = g_u + g_inv
+g[INIT] = g_init + g_inv
 g[INVARIANT] = g_inv
 
 run_example(file_tag, circuit, g, Z, barrier_degree, eps, gamma, k, verbose, log_level, check=True)
