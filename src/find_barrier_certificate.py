@@ -49,6 +49,8 @@ def find_barrier_certificate(circuit : Circuit,
     chunks = make_chunks(circuit, unitaries, k)
     lams = make_lambdas(variables, g, unitaries, idx_pairs, chunks)
     logger.info("Lambda functions and utilities set up.")
+    logger.debug("Index pairs: " + str(idx_pairs))
+    logger.debug("Chunks: " + str(chunks))
     sym_poly_eq = dict([
         (INIT, lambda B, lam, g: sym.poly(-B - np.dot(lam, g[INIT]), variables)),
         (UNSAFE, lambda B, lam, g: sym.poly(B - d - np.dot(lam, g[UNSAFE]), variables)),
@@ -103,7 +105,10 @@ def make_chunks(circuit : list[np.ndarray], unitaries : list[np.ndarray], k : in
     circuit_divided : list[tuple[np.ndarray]] = list(grouper(circuit, k))
     unique_chunks : list[tuple[np.ndarray]] = [circuit_divided[0]]
     for circuit_chunk in circuit_divided:
-        if circuit_chunk not in unique_chunks: unique_chunks.append(circuit_chunk)
+        unique = True
+        for unique_chunk in unique_chunks:
+            unique = unique and not np.all([np.array_equal(m1, m2) for m1, m2 in zip(circuit_chunk, unique_chunk)])
+        if unique: unique_chunks.append(circuit_chunk)
 
     chunks = []
     for circuit_chunk in unique_chunks:
