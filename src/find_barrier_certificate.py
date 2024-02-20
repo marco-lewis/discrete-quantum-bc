@@ -4,6 +4,7 @@ from src.typings import *
 from src.utils import *
 
 from collections import defaultdict
+import time
 import logging
 import sys
 
@@ -27,6 +28,7 @@ def find_barrier_certificate(circuit : Circuit,
                   check=False) -> BarrierCertificate:
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
+    setup_time = time.time()
     
     d = calculate_d(k, eps, gamma)
     variables = generate_variables(Z)
@@ -70,18 +72,36 @@ def find_barrier_certificate(circuit : Circuit,
 
     # 3. Get matrix polynomial and constraints for semidefinite format
     cvx_matrices, cvx_constraints = get_cvx_format(lams, symbol_var_dict, variables, sym_polys)
+    setup_time = time.time() - setup_time
 
     # 4. Solve using PICOS
-    exit_prog = run_picos(cvx_constraints, solver, verbose)
+    exit_prog, picos_time = run_picos(cvx_constraints, solver, verbose)
     if exit_prog: sys.exit(exit_prog)
     
     # 5. Return the barrier in a readable format
+    post_time = time.time()
     barrier_certificate = fetch_values(barriers, unitaries, barrier_coeffs, lam_coeffs, symbol_var_dict, precision_bound, lams, cvx_matrices)
+    post_time = time.time() - post_time
 
     # 6. Check barrier works
+    verif_time = 0
     if check:
         logger.info("Performing checks")
+        verif_time = time.time()
         check_barrier(barrier_certificate, g, Z, idx_pairs, chunks, k, eps, gamma, log_level=log_level)
+        verif_time = time.time() - verif_time
+    
+    row_msg = lambda m1, m2: f'{m1:<25}{m2}'
+    format_time = lambda t: f'{t:.3f}'
+    time_message = [
+        "Table of runtimes",
+        row_msg("Process", "Time (s)"),
+        row_msg("Setup + Postprocessing", format_time(setup_time + post_time)),
+        row_msg("PICOS", format_time(picos_time)),
+        row_msg("Verification", format_time(verif_time)),
+    ]
+    for msg in time_message: logger.info(msg)
+
     return barrier_certificate
 
 def get_unitary_idxs(circuit : Circuit, unitaries : Unitaries) -> list[Idx]:
@@ -240,7 +260,7 @@ def get_cvx_format(lams : dict[str, LamList], symbol_var_dict : dict[sym.Symbol,
     logger.debug(cvx_constraints)
     return cvx_matrices, cvx_constraints
 
-def run_picos(cvx_constraints : list[picos.constraints.Constraint], solver : str, verbose : int) -> int:
+def run_picos(cvx_constraints : list[picos.constraints.Constraint], solver : str, verbose : int) -> tuple[int, float]:
     prob = picos.Problem()
     prob.minimize = picos.Constant(0)
     for constraint in cvx_constraints: prob.add_constraint(constraint)
@@ -249,7 +269,9 @@ def run_picos(cvx_constraints : list[picos.constraints.Constraint], solver : str
     try:
         sys.stdout = LoggerWriter(picos_logger.info)
         sys.stderr = LoggerWriter(picos_logger.error)
+        picos_time = time.time()
         prob.solve(verbose=bool(verbose), solver=solver)
+        picos_time = time.time() - picos_time
     except Exception as e:
         logger.exception(e)
         return 1
@@ -261,7 +283,7 @@ def run_picos(cvx_constraints : list[picos.constraints.Constraint], solver : str
         logger.error("Cannot get barrier from problem.")
         return 1
     logger.info("Solution found.")
-    return 0
+    return 0, picos_time
 
 def get_symbol_values(symbols : list[sym.Symbol], symbol_var_dict : dict[sym.Symbol, picos.ComplexVariable], precision_bound : float) -> dict[sym.Symbol, complex]:
     symbol_values : dict[sym.Symbol, complex] = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
