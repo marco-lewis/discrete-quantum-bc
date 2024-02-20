@@ -27,6 +27,7 @@ def run_example(file_tag : str,
         barrier_certificate = find_barrier_certificate(circuit, g, Z, barrier_degree=barrier_degree, eps=eps, gamma=gamma, k=k, verbose=verbose, log_level=log_level, precision_bound=precision_bound, solver=solver, check=check)
         logger.info("Barrier certificate: " +  str(barrier_certificate))
         with open("logs/barrier_" + file_tag + ".log", 'w') as file:
+            file.write(str(datetime.datetime.now()) + "\n")
             file.write("k: " + str(k) + "; eps: " + str(eps) + "; gamma: " + str(gamma) + "\n")
             file.write(repr(barrier_certificate))
         logger.info("Barriers stored")
