@@ -7,9 +7,9 @@ import numpy as np
 import sympy as sym
 
 # 0. Inputs, variable definitions and constants
-n = 1
+n = 2
 N = 2**n
-eps = 0.1
+eps = 0.01
 gamma = 0
 barrier_degree = 2
 k = 2
@@ -34,16 +34,17 @@ g_inv = [
 ]
 g_inv = poly_list(g_inv, variables)
 
-experiment = 1
-g_u = [Z[experiment] * sym.conjugate(Z[experiment]) - 0.52]
+experiment = 0
+err = 10**-(n+1)
+g_u = [Z[experiment] * sym.conjugate(Z[experiment]) - (1/2**n + 2*err)]
 g_u = poly_list(g_u, variables)
 
 g_init = [
-    Z[0] * sym.conjugate(Z[0]) - 0.49,
-    0.51 - Z[0] * sym.conjugate(Z[0]),
     1j*(Z[0] - sym.conjugate(Z[0])),
     -1j*(Z[0] - sym.conjugate(Z[0])),
     ]
+g_init += [z * sym.conjugate(z) - (1/2**n - err) for z in Z]
+g_init += [1/2**n + err - z * sym.conjugate(z) for z in Z]
 g_init = poly_list(g_init, variables)
 
 g = {}

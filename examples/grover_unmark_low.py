@@ -13,7 +13,7 @@ N = 2**n
 eps = 0.01
 gamma = 0.01
 barrier_degree = 2
-k = 1
+k = 2
 
 log_level=logging.INFO
 file_tag = "grover_unmark" + str(n) + "_" + "m" + str(mark)
@@ -50,10 +50,14 @@ g_u = poly_list(g_u, variables)
 
 err = 10 ** -(n+1)
 g_init = []
-g_init += [z * sym.conjugate(z) - (1/N - err) for z in Z]
-g_init += [(1/N + err) - z * sym.conjugate(z) for z in Z]
-g_init += [-1j * (z - sym.conjugate(z)) for z in Z]
-g_init += [ 1j * (z - sym.conjugate(z)) for z in Z]
+g_init += [(z + sym.conjugate(z))/2 - np.sqrt(1/N - err) for z in Z]
+g_init += [np.sqrt(1/N + err) - (z + sym.conjugate(z))/2 for z in Z]
+g_init += [1 - np.sum([((z + sym.conjugate(z))/2)**2 for z in Z])]
+g_init += [np.sum([((z + sym.conjugate(z))/2)**2 for z in Z]) - 1]
+# g_init += [z * sym.conjugate(z) - (1/N - err) for z in Z]
+# g_init += [(1/N + err) - z * sym.conjugate(z) for z in Z]
+# g_init += [-1j * (z - sym.conjugate(z)) for z in Z]
+# g_init += [ 1j * (z - sym.conjugate(z)) for z in Z]
 g_init = poly_list(g_init, variables)
 
 g = {}
