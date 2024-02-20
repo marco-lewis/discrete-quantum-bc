@@ -2,6 +2,7 @@ from src.find_barrier_certificate import find_barrier_certificate
 from src.log_settings import setup_logger
 from src.typings import *
 
+import datetime
 import logging
 
 def run_example(file_tag : str, 
@@ -19,6 +20,7 @@ def run_example(file_tag : str,
                 check=False):
     logger = setup_logger(file_tag + ".log", log_level=log_level)
     try:
+        logger.info(str(datetime.datetime.now()))
         logger.info("g defined")
         logger.debug(g)
         
