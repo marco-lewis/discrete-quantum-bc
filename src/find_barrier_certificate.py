@@ -274,14 +274,14 @@ def run_picos(cvx_constraints : list[picos.constraints.Constraint], solver : str
         picos_time = time.time() - picos_time
     except Exception as e:
         logger.exception(e)
-        return 1
+        return 1, 0
     finally:
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
     logger.info("Problem status: " + prob.status)
     if "infeasible" in prob.status or "unbounded" in prob.status:
         logger.error("Cannot get barrier from problem.")
-        return 1
+        return 1, 0
     logger.info("Solution found.")
     return 0, picos_time
 
