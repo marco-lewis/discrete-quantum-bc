@@ -70,3 +70,6 @@ def convert_exprs_of_matrix(exprs : list[sym.Poly], cvx_matrix : picos.Hermitian
         if isinstance(expr, MatrixElement): return cvx_matrix[int(expr.i), int(expr.j)]
         return complex(expr)
     return [convert(expr) for expr in exprs]
+
+def round_expr(expr : sym.Poly, num_digits=5):
+    return expr.xreplace({n : round(n, num_digits) for n in expr.atoms(sym.Number)})

@@ -29,6 +29,15 @@ def check_barrier(barrier_certificate : BarrierCertificate,
     variables = generate_variables(Z)
     var_z3_dict = dict(zip(Z, [Complex(var.name) for var in Z]))
     
+    logger.info("Checking all barriers are real.")
+    for unitary, barrier in barrier_certificate:
+        # 2i * im(barrier) barrier
+        barrier_imag = round_expr(sym.simplify(sym.conjugate(sym.conjugate(barrier)) - sym.conjugate(barrier)), num_digits=15)
+        if not barrier_imag == 0:
+            logger.error(barrier_imag)
+            raise_error("The following barrier is not real.\n" + str(unitary) + ": " + str(barrier))
+    logger.info("All barriers real.")
+
     # Barriers
     z3_barriers = [(unitary, _sympy_poly_to_z3(var_z3_dict, barrier)) for unitary, barrier in barrier_certificate]
     # Difference
@@ -53,8 +62,6 @@ def run_checks(z3_barriers, z3_diffs, z3_changes, z3_k_diffs, z3_constraints, k=
 
     for unitary, z3_barrier in z3_barriers:
         logger.info("Checking barrier for unitary\n" + str(unitary))
-        logger.info("Check barrier real")
-        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_barrier, z3.Not(constraint_val.i == 0)], tool=DREAL)
         logger.info("Check " + INIT)
         run_solver(s, [z3.And(z3_constraints[INIT]), constraint_val == z3_barrier, constraint_val.r > 0], tool=DREAL)
         logger.info("Check " + UNSAFE)
