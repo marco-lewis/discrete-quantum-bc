@@ -1,4 +1,5 @@
 from examples.run_example import run_example
+from examples.gates import tgate
 from src.utils import *
 
 import logging
@@ -18,7 +19,6 @@ log_level=logging.INFO
 file_tag = "tgate" + str(n) + "k" + str(k)
 verbose = 1
 
-tgate = np.array([[1,0],[0,np.exp(1j*np.pi/4)]])
 unitary = tgate
 for i in range(1, n): unitary = np.kron(unitary, tgate)
 circuit = [unitary] * 6

@@ -1,4 +1,5 @@
 from examples.run_example import run_example
+from examples.gates import *
 from src.utils import *
 
 import logging
@@ -29,7 +30,7 @@ diffusion_oracle = 2*temp - diffusion_oracle
 hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 hadamard_n = lambda n: hadamard if n == 1 else np.kron(hadamard, hadamard_n(n-1))
 diffusion = np.dot(hadamard_n(n), np.dot(diffusion_oracle, hadamard_n(n)))
-circuit = [oracle, diffusion] * 2
+circuit = [oracle, diffusion, np.eye(N,N), np.eye(N,N)]
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
@@ -42,10 +43,8 @@ g_inv = [
 ]
 g_inv = poly_list(g_inv, variables)
 
-# Unmarked states will never be very likely (>90%)
-g_u = [
-    Z[0] * sym.conjugate(Z[0]) - 0.9,
-]
+# Unmarked state (3) will never be very likely (>90%)
+g_u = [Z[3] * sym.conjugate(Z[3]) - 0.9]
 g_u = poly_list(g_u, variables)
 
 err = 10 ** -(n+1)
@@ -54,10 +53,6 @@ g_init += [(z + sym.conjugate(z))/2 - np.sqrt(1/N - err) for z in Z]
 g_init += [np.sqrt(1/N + err) - (z + sym.conjugate(z))/2 for z in Z]
 g_init += [1 - np.sum([((z + sym.conjugate(z))/2)**2 for z in Z])]
 g_init += [np.sum([((z + sym.conjugate(z))/2)**2 for z in Z]) - 1]
-# g_init += [z * sym.conjugate(z) - (1/N - err) for z in Z]
-# g_init += [(1/N + err) - z * sym.conjugate(z) for z in Z]
-# g_init += [-1j * (z - sym.conjugate(z)) for z in Z]
-# g_init += [ 1j * (z - sym.conjugate(z)) for z in Z]
 g_init = poly_list(g_init, variables)
 
 g = {}

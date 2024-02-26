@@ -1,4 +1,5 @@
 from examples.run_example import run_example
+from examples.gates import *
 from src.utils import *
 
 import logging
@@ -26,8 +27,6 @@ temp = np.zeros((N,N))
 temp[0,0] = 1
 diffusion_oracle = 2*temp - diffusion_oracle
 
-hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
-hadamard_n = lambda n: hadamard if n == 1 else np.kron(hadamard, hadamard_n(n-1))
 diffusion = np.dot(hadamard_n(n), np.dot(diffusion_oracle, hadamard_n(n)))
 faulty_grover = np.dot(diffusion, oracle)
 circuit = [oracle, diffusion]

@@ -1,4 +1,5 @@
 from examples.run_example import run_example
+from examples.gates import zgate
 from src.utils import *
 
 import logging
@@ -18,7 +19,6 @@ log_level=logging.INFO
 file_tag = "zgate" + str(n) + "k" + str(k)
 verbose = 1
 
-zgate = np.array([[1,0],[0,-1]])
 unitary = zgate
 for i in range(1, n): unitary = np.kron(unitary, zgate)
 circuit = [unitary] * 6
