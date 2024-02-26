@@ -156,7 +156,7 @@ def make_sym_polys(barriers : list[Barrier], lams : dict[str, LamList], g : Semi
     logger.debug(sym_polys[INIT])
 
     sym_polys[UNSAFE] = [sym_poly_eq[UNSAFE](barriers[j], lams[UNSAFE][j], g) for j in range(len(unitaries))]
-    logger.info("Polynomial for " + UNSAFE + " made.")
+    logger.info("Polynomials for " + UNSAFE + " made.")
     logger.debug(sym_polys[UNSAFE])
 
     if k == 1: logger.info("No polynomials for " + DIFF + " need to be made (k=1).")
