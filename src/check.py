@@ -56,33 +56,32 @@ def check_barrier(barrier_certificate : BarrierCertificate,
 
 def run_checks(z3_barriers, z3_diffs, z3_changes, z3_k_diffs, z3_constraints, k=1, eps=0.01, gamma=0.01):
     d = calculate_d(k, eps, gamma)
-    tactic = z3.Then('solve-eqs','smt')
-    s = tactic.solver()
     constraint_val = Complex('constraint_val')
 
     for unitary, z3_barrier in z3_barriers:
         logger.info("Checking barrier for unitary\n" + str(unitary))
         logger.info("Check " + INIT)
-        run_solver(s, [z3.And(z3_constraints[INIT]), constraint_val == z3_barrier, constraint_val.r > 0], tool=DREAL)
+        run_solver([z3.And(z3_constraints[INIT]), constraint_val == z3_barrier, constraint_val.r > 0], tool=DREAL)
         logger.info("Check " + UNSAFE)
-        run_solver(s, [z3.And(z3_constraints[UNSAFE]), constraint_val == z3_barrier, constraint_val.r < d], tool=DREAL)
+        run_solver([z3.And(z3_constraints[UNSAFE]), constraint_val == z3_barrier, constraint_val.r < d], tool=DREAL)
 
     for idx, z3_diff in enumerate(z3_diffs):
         logger.info("Check " + DIFF + str(idx))
-        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_diff, constraint_val.r > eps], tool=DREAL)
+        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_diff, constraint_val.r > eps], tool=DREAL)
     
     for idx, z3_change in enumerate(z3_changes):
         logger.info("Check " + CHANGE + str(idx))
-        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_change, constraint_val.r > gamma], tool=DREAL)
+        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_change, constraint_val.r > gamma], tool=DREAL)
 
     for idx, z3_k_diff in enumerate(z3_k_diffs):
         logger.info("Check " + INDUCTIVE + str(idx))
-        run_solver(s, [z3.And(z3_constraints[INVARIANT]), constraint_val == z3_k_diff, constraint_val.r > 0], tool=DREAL)
+        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_k_diff, constraint_val.r > 0], tool=DREAL)
     logger.info("All constraints checked.")
 
 
-def run_solver(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3, delta=0.001, timeout=300):
-    s.push()
+def run_solver(conds : list[z3.ExprRef], tool=Z3, delta=0.001, timeout=300):
+    tactic = z3.Then('solve-eqs','smt')
+    s = tactic.solver()
     [s.add(z3.simplify(cond)) for cond in conds]
     logger.debug("Conditions in solver:\n" + str(s))
     sat = ""
@@ -99,7 +98,6 @@ def run_solver(s : z3.Solver, conds : list[z3.ExprRef], tool=Z3, delta=0.001, ti
     if sat in [z3.unsat, DREAL_UNSAT]: logger.info("Constraint satisfied.")
     elif sat in [z3.sat, DREAL_SAT]: raise_error("Counter example: " + model)
     elif sat in [z3.unknown, DREAL_UNKOWN]: logger.warning("Solver returned unkown. Function may not satisfy barrier certificate constraint.")
-    s.pop()
 
 
 # Based on: https://stackoverflow.com/a/38980538/19768075
