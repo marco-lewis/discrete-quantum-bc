@@ -27,9 +27,9 @@ temp = np.zeros((N,N))
 temp[0,0] = 1
 diffusion_oracle = 2*temp - diffusion_oracle
 
-hadamard = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
-hadamard_n = lambda n: hadamard if n == 1 else np.kron(hadamard, hadamard_n(n-1))
-diffusion = np.dot(hadamard_n(n), np.dot(diffusion_oracle, hadamard_n(n)))
+Hgate = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
+HNgate = lambda n: Hgate if n == 1 else np.kron(Hgate, HNgate(n-1))
+diffusion = np.dot(HNgate(n), np.dot(diffusion_oracle, HNgate(n)))
 circuit = [oracle, diffusion, np.eye(N,N), np.eye(N,N)]
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]

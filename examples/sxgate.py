@@ -1,5 +1,5 @@
 from examples.run_example import run_example
-from examples.gates import sxgate
+from examples.gates import SQRTXgate
 from src.utils import *
 
 import logging
@@ -19,8 +19,8 @@ log_level=logging.INFO
 file_tag = "sxgate" + str(n) + "k" + str(k)
 verbose = 1
 
-unitary = sxgate
-for i in range(1, n): unitary = np.kron(unitary, sxgate)
+unitary = SQRTXgate
+for i in range(1, n): unitary = np.kron(unitary, SQRTXgate)
 circuit = [unitary] * 8
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]

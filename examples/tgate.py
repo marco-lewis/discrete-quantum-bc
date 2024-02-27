@@ -1,5 +1,5 @@
 from examples.run_example import run_example
-from examples.gates import tgate
+from examples.gates import Tgate
 from src.utils import *
 
 import logging
@@ -19,8 +19,8 @@ log_level=logging.INFO
 file_tag = "tgate" + str(n) + "k" + str(k)
 verbose = 1
 
-unitary = tgate
-for i in range(1, n): unitary = np.kron(unitary, tgate)
+unitary = Tgate
+for i in range(1, n): unitary = np.kron(unitary, Tgate)
 circuit = [unitary] * 6
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
