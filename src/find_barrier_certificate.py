@@ -287,14 +287,15 @@ def run_picos(cvx_constraints : list[picos.constraints.Constraint], solver : str
 
 def get_symbol_values(symbols : list[sym.Symbol], symbol_var_dict : dict[sym.Symbol, picos.ComplexVariable], precision_bound : float) -> dict[sym.Symbol, complex]:
     symbol_values : dict[sym.Symbol, complex] = dict(zip(symbols, [symbol_var_dict[s].value for s in symbols]))
+    ndigits = -int(np.log10(precision_bound))
     for key in symbol_values:
         if not(symbol_values[key]): t = 0
         else:
             try:
-                t = symbol_values[key].real if abs(symbol_values[key].real) > precision_bound else 0
-                t += 1j*symbol_values[key].imag if abs(symbol_values[key].imag) > precision_bound else 0
+                t = round(symbol_values[key].real, ndigits) if abs(symbol_values[key].real) > precision_bound else 0
+                t += 1j*round(symbol_values[key].imag, ndigits) if abs(symbol_values[key].imag) > precision_bound else 0
             except:
-                t = symbol_values[key] if abs(symbol_values[key]) > precision_bound else 0
+                t = round(symbol_values[key], ndigits) if abs(symbol_values[key]) > precision_bound else 0
         symbol_values[key] = t
     return symbol_values
 

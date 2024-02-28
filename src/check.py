@@ -32,7 +32,7 @@ def check_barrier(barrier_certificate : BarrierCertificate,
     logger.info("Checking all barriers are real.")
     for unitary, barrier in barrier_certificate:
         # 2i * im(barrier) barrier
-        barrier_imag = round_expr(sym.simplify(sym.conjugate(sym.conjugate(barrier)) - sym.conjugate(barrier)), num_digits=15)
+        barrier_imag = round_expr(sym.simplify(barrier - sym.conjugate(barrier)), num_digits=15)
         if not barrier_imag == 0:
             logger.error(barrier_imag)
             raise_error("The following barrier is not real.\n" + str(unitary) + ": " + str(barrier))
