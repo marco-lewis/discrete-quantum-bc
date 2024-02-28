@@ -30,7 +30,7 @@ diffusion_oracle = 2*temp - diffusion_oracle
 Hgate = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 HNgate = lambda n: Hgate if n == 1 else np.kron(Hgate, HNgate(n-1))
 diffusion = np.dot(HNgate(n), np.dot(diffusion_oracle, HNgate(n)))
-circuit = [oracle, diffusion, np.eye(N,N), np.eye(N,N)]
+circuit = [oracle, diffusion] * 2
 
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(N)]
 variables = Z + [z.conjugate() for z in Z]
