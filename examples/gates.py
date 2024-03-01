@@ -12,3 +12,5 @@ HNgate = lambda n: Hgate if n == 1 else np.kron(Hgate, HNgate(n-1))
 Rx = lambda phi: np.array([[np.cos(phi/2), -1j*np.sin(phi/2)],[-1j*np.sin(phi/2), np.cos(phi/2)]])
 Ry = lambda phi: np.array([[np.cos(phi/2), -1*np.sin(phi/2)],[-1*np.sin(phi/2), np.cos(phi/2)]])
 Rz = lambda phi: np.array([[np.exp(-1j * phi/2), 0],[0, np.exp(1j * phi/2)]])
+
+n_gate = lambda gate, n: gate if n == 1 else np.kron(gate, n_gate(gate, n-1))

@@ -31,16 +31,20 @@ def flatten(matrix): return [item for row in matrix for item in row]
 def calculate_d(k = 1, eps = 0.01, gamma = 0.01):
     return (k + 1) * (eps + gamma)
 
-def generate_unitary_k(k : int, unitary : Unitary):
-    unitary_k = unitary
-    for i in range(1,k): unitary_k = np.dot(unitary, unitary_k)
-    return unitary_k
 
 def generate_variables(Z : list[sym.Symbol]):
     return Z + [z.conjugate() for z in Z]
 
 def poly_list(expr_list : list[sym.Poly], variables : list[sym.Symbol], domain=sym.CC) -> list[sym.Poly]:
     return [sym.poly(l, variables, domain=domain) for l in expr_list]
+
+def round_expr(expr : sym.Poly, num_digits=5):
+    return expr.xreplace({n : round(n, num_digits) for n in expr.atoms(sym.Number)})
+
+def generate_unitary_k(k : int, unitary : Unitary):
+    unitary_k = unitary
+    for i in range(1,k): unitary_k = np.dot(unitary, unitary_k)
+    return unitary_k
 
 def create_polynomial(variables : list[sym.Symbol], deg=2, coeff_tok='a', monomial=False) -> sym.Poly:
     p = []
@@ -70,6 +74,3 @@ def convert_exprs_of_matrix(exprs : list[sym.Poly], cvx_matrix : picos.Hermitian
         if isinstance(expr, MatrixElement): return cvx_matrix[int(expr.i), int(expr.j)]
         return complex(expr)
     return [convert(expr) for expr in exprs]
-
-def round_expr(expr : sym.Poly, num_digits=5):
-    return expr.xreplace({n : round(n, num_digits) for n in expr.atoms(sym.Number)})
