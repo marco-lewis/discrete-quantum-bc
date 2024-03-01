@@ -2,7 +2,7 @@ from src.find_barrier_certificate import find_barrier_certificate
 from src.log_settings import setup_logger
 from src.typings import *
 from src.utils import INIT, INVARIANT, UNSAFE, poly_list
-from examples.zgate import Zgate_experiment
+import examples.examples as ex
 
 import argparse
 import datetime
@@ -62,11 +62,11 @@ parser.add_argument("--epsilon", "-eps", type=float, default=0.01, metavar="EPS"
 parser.add_argument("--gamma", "-gam", type=float, default=0.01, metavar="GAM", help="Bound for change condition (B_{t+1}(x) - B_t(x) < GAM).")
 parser.add_argument("-k", type=int, default=1, help="Inductive parameter.")
 parser.add_argument("--barrier-degree", type=int, default=2, help="Maximum degree of generated barrier.")
-parser.add_argument("--target", "-tgt", type=int, default=0, help="Target qubit value for example.")
+parser.add_argument("--target", "-tgt", type=int, default=0, help="Target qubit for semialgebraic sets.")
 parser.add_argument("--mark", type=int, default=0, help="Marked qubit value for Grover example.")
-parser.add_argument("--verbose", "-v", action='store_true')
+parser.add_argument("--verbose", "-v", action='store_true', help="Set verbosity.")
 parser.add_argument("--log-level", default='INFO', choices=["DEBUG,INFO,WARN,ERROR,CRITICAL"])
-parser.add_argument("--check", action='store_true')
+parser.add_argument("--check", action='store_true', help="Set to check generated barrier with SMT solvers.")
 
 
 if __name__ == '__main__':
@@ -74,13 +74,13 @@ if __name__ == '__main__':
     Z = [sym.Symbol('z' + str(i), complex=True) for i in range(2**args.n)]
     variables = Z + [z.conjugate() for z in Z]
     if args.example == 'zgate':
-        file_tag, circuit, g = Zgate_experiment(Z, variables, args.n, args.k, args.target)
+        file_tag, circuit, g = ex.Z_example(Z, variables, args.n, args.k, args.target)
     if args.example == 'xgate':
-        pass
+        file_tag, circuit, g = ex.X_example(Z, variables, args.n, args.k, args.target)
     if args.example == 'xzgate':
-        pass
+        file_tag, circuit, g = ex.XZ_example(Z, variables, args.n, args.k, args.target)
     if args.example == 'groverop_umark_low':
-        pass
+        file_tag, circuit, g = ex.Grover_unitary_unmark_example(Z, variables, args.n, args.k, args.target, args.mark)
     g = add_invariant(g, Z, variables, args.n)
 
     run_example(

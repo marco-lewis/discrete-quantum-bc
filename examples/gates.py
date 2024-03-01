@@ -7,7 +7,6 @@ Tgate = np.array([[1,0],[0,np.exp(1j*np.pi/4)]])
 SQRTXgate = 1/2 * np.array([[1+1j, 1-1j], [1-1j, 1+1j]])
 
 Hgate = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
-HNgate = lambda n: Hgate if n == 1 else np.kron(Hgate, HNgate(n-1))
 
 Rx = lambda phi: np.array([[np.cos(phi/2), -1j*np.sin(phi/2)],[-1j*np.sin(phi/2), np.cos(phi/2)]])
 Ry = lambda phi: np.array([[np.cos(phi/2), -1*np.sin(phi/2)],[-1*np.sin(phi/2), np.cos(phi/2)]])
