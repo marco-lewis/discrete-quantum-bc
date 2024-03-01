@@ -85,7 +85,6 @@ def Grover_unitary_unmark_example(Z : list[sym.Symbol], variables : list[sym.Sym
     diffusion = np.dot(n_gate(Hgate, n), np.dot(diffusion_oracle, n_gate(Hgate, n)))
     circuit = [np.dot(diffusion, oracle)] * 4
 
-    # Unmarked state (3) will never be very likely (>90%)
     g_u = [Z[target] * sym.conjugate(Z[target]) - 0.9]
     g_u = poly_list(g_u, variables)
 
