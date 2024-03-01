@@ -52,7 +52,8 @@ def run_example(file_tag : str,
         logger.exception(e)
 
 parser = argparse.ArgumentParser(
-    description="Run an example."
+    description="Run an example.",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 examples = ['xgate','zgate','xzgate','groverop_unmark_low']
 parser.add_argument("--example", "-ex", type=str, choices=examples, required=True, help="Example to run.")
@@ -65,9 +66,8 @@ parser.add_argument("--barrier-degree", type=int, default=2, help="Maximum degre
 parser.add_argument("--target", "-tgt", type=int, default=0, help="Target qubit for semialgebraic sets.")
 parser.add_argument("--mark", type=int, default=0, help="Marked qubit value for Grover example.")
 parser.add_argument("--verbose", "-v", action='store_true', help="Set verbosity.")
-parser.add_argument("--log-level", default='INFO', choices=["DEBUG,INFO,WARN,ERROR,CRITICAL"])
+parser.add_argument("--log-level", type=str, default='INFO', choices=["DEBUG,INFO,WARN,ERROR,CRITICAL"], help="Display level of logging.")
 parser.add_argument("--check", action='store_true', help="Set to check generated barrier with SMT solvers.")
-
 
 if __name__ == '__main__':
     args = parser.parse_args()
