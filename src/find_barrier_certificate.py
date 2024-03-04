@@ -139,13 +139,16 @@ def make_chunks(circuit : list[np.ndarray], unitaries : list[np.ndarray], k : in
         chunks.append(chunk)
     return chunks
 
+def get_degree(poly : sym.Poly) -> int:
+    return poly.total_degree() if poly.total_degree() % 2 == 0 else poly.total_degree() + 1
+
 def make_lambdas(variables : list[sym.Symbol], g : SemiAlgebraicDict, unitaries : Unitaries, idx_pairs : tuple[int, int], chunks : list[Chunk]) -> dict[str, LamList]:
     lams = {}
-    lams[INIT] = [[create_polynomial(variables, deg=g[INIT][i].total_degree(), coeff_tok='s_' + INIT + ';' + str(i) + 'c') for i in range(len(g[INIT]))]]
-    lams[UNSAFE] = [[create_polynomial(variables, deg=g[UNSAFE][i].total_degree(), coeff_tok='s_' + UNSAFE + str(j) + ';' + str(i) + 'c') for i in range(len(g[UNSAFE]))] for j in range(len(unitaries))]
-    lams[DIFF] = [[create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + DIFF + str(j) +';' + str(i) + 'c') for i in range(len(g[INVARIANT]))] for j in range(len(unitaries))]
-    lams[CHANGE] = [[create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + CHANGE + str(idx) + "," + str(next_idx) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))] for (idx, next_idx) in idx_pairs]
-    lams[INDUCTIVE] = [[create_polynomial(variables, deg=g[INVARIANT][i].total_degree(), coeff_tok='s_' + INDUCTIVE + str(chunk_id) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))] for chunk_id, _ in enumerate(chunks)]
+    lams[INIT] = [[create_polynomial(variables, deg=get_degree(g[INIT][i]), coeff_tok='s_' + INIT + ';' + str(i) + 'c') for i in range(len(g[INIT]))]]
+    lams[UNSAFE] = [[create_polynomial(variables, deg=get_degree(g[UNSAFE][i]), coeff_tok='s_' + UNSAFE + str(j) + ';' + str(i) + 'c') for i in range(len(g[UNSAFE]))] for j in range(len(unitaries))]
+    lams[DIFF] = [[create_polynomial(variables, deg=get_degree(g[INVARIANT][i]), coeff_tok='s_' + DIFF + str(j) +';' + str(i) + 'c') for i in range(len(g[INVARIANT]))] for j in range(len(unitaries))]
+    lams[CHANGE] = [[create_polynomial(variables, deg=get_degree(g[INVARIANT][i]), coeff_tok='s_' + CHANGE + str(idx) + "," + str(next_idx) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))] for (idx, next_idx) in idx_pairs]
+    lams[INDUCTIVE] = [[create_polynomial(variables, deg=get_degree(g[INVARIANT][i]), coeff_tok='s_' + INDUCTIVE + str(chunk_id) + ';' + str(i) + 'c') for i in range(len(g[INVARIANT]))] for chunk_id, _ in enumerate(chunks)]
     return lams
 
 def make_sym_polys(barriers : list[Barrier], lams : dict[str, LamList], g : SemiAlgebraicDict, unitaries : Unitaries, idx_pairs : list[tuple[int,int]], chunks : list[Chunk], k : int, sym_poly_eq : dict[callable]) -> dict[str, list[sym.Poly]]:
@@ -205,6 +208,9 @@ def PSD_constraint_generator(sym_polynomial : sym.Poly,
                              matrix_name='Q',
                              variables=[]):
     # Setup dictionary of monomials to cvx coefficients for sym_polynomial
+    if sym_polynomial.total_degree() % 2 == 1:
+        logger.exception("Polynomial does not have degree 2.")
+        exit(1)
     cvx_coeffs = convert_exprs(sym_polynomial.coeffs(), symbol_var_dict)
     poly_monom_to_cvx = dict(zip(sym_polynomial.monoms(), cvx_coeffs))
     poly_monom_to_cvx = defaultdict(lambda: 0.0, poly_monom_to_cvx)
