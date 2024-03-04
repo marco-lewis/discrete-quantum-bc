@@ -30,6 +30,9 @@ TIME_SP = 'Setup + Postprocessing'
 TIME_PICOS = 'PICOS'
 TIME_VERIF = 'VERIFICATION'
 
+row_msg = lambda m1, m2: f'{m1:<25}{m2}'
+format_time = lambda t: f'{t:.3f}'
+
 def flatten(matrix): return [item for row in matrix for item in row]
 
 def calculate_d(k = 1, eps = 0.01, gamma = 0.01):

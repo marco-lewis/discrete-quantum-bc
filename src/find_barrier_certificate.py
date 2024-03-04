@@ -93,8 +93,6 @@ def find_barrier_certificate(circuit : Circuit,
         check_barrier(barrier_certificate, g, Z, idx_pairs, chunks, k, eps, gamma, log_level=log_level)
         times[TIME_VERIF] = time.time() - times[TIME_VERIF]
     
-    row_msg = lambda m1, m2: f'{m1:<25}{m2}'
-    format_time = lambda t: f'{t:.3f}'
     time_message = [
         "Table of runtimes",
         row_msg("Process", "Time (s)"),

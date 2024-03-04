@@ -1,7 +1,7 @@
 from src.find_barrier_certificate import find_barrier_certificate
 from src.log_settings import setup_logger
 from src.typings import *
-from src.utils import INIT, INVARIANT, UNSAFE, poly_list
+from src.utils import *
 import examples.examples as ex
 
 import argparse
@@ -48,6 +48,7 @@ def run_example(file_tag : str,
                 repr(barrier_certificate)
             ]))
         logger.info("Barriers stored")
+        return times
     except KeyboardInterrupt as e:
         logger.exception(e)
 
@@ -57,6 +58,7 @@ parser = argparse.ArgumentParser(
     )
 examples = ['xgate','zgate','xzgate','grover_even_unmark','grover_odd_unmark']
 parser.add_argument("--example", "-ex", type=str, choices=examples, required=True, help="Example to run.")
+parser.add_argument("--runs", type=int, default=1, help="Number of runs to perform.")
 parser.add_argument("--solver", type=str, default='cvxopt', choices=['cvxopt', 'conelp', 'mosek'], help="SDP solver to use.")
 parser.add_argument("-n", type=int, default=1, help="Number of qubits.")
 parser.add_argument("--epsilon", "-eps", type=float, default=0.01, metavar="EPS", help="Bound for difference condition (B_t(f_t(x)) - B_t(x) < EPS).")
@@ -84,17 +86,30 @@ if __name__ == '__main__':
         file_tag, circuit, g = ex.Grover_unmark_example(Z, variables, args.n, args.k, args.target, args.mark, odd='odd' in args.example)
     g = add_invariant(g, Z, variables, args.n)
 
-    run_example(
-        file_tag=file_tag,
-        circuit=circuit,
-        g=g,
-        Z=Z,
-        barrier_degree=args.barrier_degree,
-        epsilon=args.epsilon,
-        gamma=args.gamma,
-        k=args.k,
-        verbose=args.verbose,
-        log_level=args.log_level,
-        solver=args.solver,
-        check=args.check
-        )
+    run_times = {
+        TIME_SP: [],
+        TIME_PICOS: [],
+        TIME_VERIF: []
+    }
+    for i in range(1, args.runs+1):
+        print("Run " + str(i))
+        times = run_example(
+            file_tag=file_tag,
+            circuit=circuit,
+            g=g,
+            Z=Z,
+            barrier_degree=args.barrier_degree,
+            epsilon=args.epsilon,
+            gamma=args.gamma,
+            k=args.k,
+            verbose=args.verbose,
+            log_level=args.log_level,
+            solver=args.solver,
+            check=args.check
+            )
+        for key in run_times: run_times[key].append(times[key])
+
+    with open(f"logs/times/{file_tag}.log", 'w') as file: file.write(str(run_times))
+    print(row_msg("Process", "Average times"))
+    average = lambda l: sum(l)/len(l) if l != 0 else 0
+    for key in run_times: print(row_msg(key, format_time(average(run_times[key]))))
