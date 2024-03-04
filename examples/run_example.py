@@ -55,7 +55,7 @@ parser = argparse.ArgumentParser(
     description="Run an example.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-examples = ['xgate','zgate','xzgate','groverop_unmark_low']
+examples = ['xgate','zgate','xzgate','grover_even_unmark','grover_odd_unmark']
 parser.add_argument("--example", "-ex", type=str, choices=examples, required=True, help="Example to run.")
 parser.add_argument("--solver", type=str, default='cvxopt', choices=['cvxopt', 'conelp', 'mosek'], help="SDP solver to use.")
 parser.add_argument("-n", type=int, default=1, help="Number of qubits.")
@@ -70,6 +70,7 @@ parser.add_argument("--log-level", type=str, default='INFO', choices=["DEBUG,INF
 parser.add_argument("--check", action='store_true', help="Set to check generated barrier with SMT solvers.")
 
 if __name__ == '__main__':
+    # TODO: Try out Grover's with swapped operators and f_0(X_0)
     args = parser.parse_args()
     Z = [sym.Symbol('z' + str(i), complex=True) for i in range(2**args.n)]
     variables = Z + [z.conjugate() for z in Z]
@@ -79,8 +80,8 @@ if __name__ == '__main__':
         file_tag, circuit, g = ex.X_example(Z, variables, args.n, args.k, args.target)
     if args.example == 'xzgate':
         file_tag, circuit, g = ex.XZ_example(Z, variables, args.n, args.k, args.target)
-    if args.example == 'groverop_umark_low':
-        file_tag, circuit, g = ex.Grover_unitary_unmark_example(Z, variables, args.n, args.k, args.target, args.mark)
+    if args.example in ['grover_even_unmark', 'grover_odd_unmark']:
+        file_tag, circuit, g = ex.Grover_unmark_example(Z, variables, args.n, args.k, args.target, args.mark, odd='odd' in args.example)
     g = add_invariant(g, Z, variables, args.n)
 
     run_example(

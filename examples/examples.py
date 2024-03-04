@@ -71,7 +71,7 @@ def XZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, tar
     g[INIT] = g_init
     return file_tag, circuit, g
 
-def Grover_unitary_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1):
+def Grover_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1, odd = 0):
     N = 2**n
     file_tag = "grover_unmark" + str(n) + "_" + "m" + str(mark)
 
@@ -83,7 +83,7 @@ def Grover_unitary_unmark_example(Z : list[sym.Symbol], variables : list[sym.Sym
     diffusion_oracle = 2*temp - diffusion_oracle
 
     diffusion = np.dot(n_gate(Hgate, n), np.dot(diffusion_oracle, n_gate(Hgate, n)))
-    circuit = [np.dot(diffusion, oracle)] * 4
+    circuit = [np.dot(diffusion, oracle)] * 4 if odd else [np.dot(oracle, diffusion)] * 4
 
     g_u = [Z[target] * sym.conjugate(Z[target]) - 0.9]
     g_u = poly_list(g_u, variables)
@@ -94,6 +94,7 @@ def Grover_unitary_unmark_example(Z : list[sym.Symbol], variables : list[sym.Sym
     g_init += [np.sqrt(1/N + err) - (z + sym.conjugate(z))/2 for z in Z]
     g_init += [1 - np.sum([((z + sym.conjugate(z))/2)**2 for z in Z])]
     g_init += [np.sum([((z + sym.conjugate(z))/2)**2 for z in Z]) - 1]
+    g_init = [g.subs(zip(Z, np.dot(oracle, Z))) for g in g_init]
     g_init = poly_list(g_init, variables)
 
     g = {}
