@@ -14,3 +14,4 @@ LamList = list[LamVector]
 Idx = int
 SemiAlgebraic = list[sym.Poly]
 SemiAlgebraicDict = dict[str, SemiAlgebraic]
+Timings = dict[str, float]

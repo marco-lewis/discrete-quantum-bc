@@ -28,7 +28,8 @@ def find_barrier_certificate(circuit : Circuit,
                   check=False) -> BarrierCertificate:
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
-    setup_time = time.time()
+    times : Timings = {}
+    times[TIME_SP] = time.time()
     
     d = calculate_d(k, eps, gamma)
     variables = generate_variables(Z)
@@ -72,37 +73,38 @@ def find_barrier_certificate(circuit : Circuit,
 
     # 3. Get matrix polynomial and constraints for semidefinite format
     cvx_matrices, cvx_constraints = get_cvx_format(lams, symbol_var_dict, variables, sym_polys)
-    setup_time = time.time() - setup_time
+    times[TIME_SP] = time.time() - times[TIME_SP]
 
     # 4. Solve using PICOS
-    exit_prog, picos_time = run_picos(cvx_constraints, solver, verbose)
+    exit_prog, times[TIME_PICOS] = run_picos(cvx_constraints, solver, verbose)
     if exit_prog: sys.exit(exit_prog)
     
     # 5. Return the barrier in a readable format
     post_time = time.time()
     barrier_certificate = fetch_values(barriers, unitaries, barrier_coeffs, lam_coeffs, symbol_var_dict, precision_bound, lams, cvx_matrices)
     post_time = time.time() - post_time
+    times[TIME_SP] += post_time
 
     # 6. Check barrier works
-    verif_time = 0
+    times[TIME_VERIF] = 0
     if check:
         logger.info("Performing checks")
-        verif_time = time.time()
+        times[TIME_VERIF] = time.time()
         check_barrier(barrier_certificate, g, Z, idx_pairs, chunks, k, eps, gamma, log_level=log_level)
-        verif_time = time.time() - verif_time
+        times[TIME_VERIF] = time.time() - times[TIME_VERIF]
     
     row_msg = lambda m1, m2: f'{m1:<25}{m2}'
     format_time = lambda t: f'{t:.3f}'
     time_message = [
         "Table of runtimes",
         row_msg("Process", "Time (s)"),
-        row_msg("Setup + Postprocessing", format_time(setup_time + post_time)),
-        row_msg("PICOS", format_time(picos_time)),
-        row_msg("Verification", format_time(verif_time)),
+        row_msg("Setup + Postprocessing", format_time(times[TIME_SP])),
+        row_msg("PICOS", format_time(times[TIME_PICOS])),
+        row_msg("Verification", format_time(times[TIME_VERIF])),
     ]
     for msg in time_message: logger.info(msg)
 
-    return barrier_certificate
+    return barrier_certificate, times
 
 def get_unitary_idxs(circuit : Circuit, unitaries : Unitaries) -> list[Idx]:
     unitary_idxs = []

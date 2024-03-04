@@ -26,6 +26,10 @@ LOC = 'loc'
 INDUCTIVE = 'inductive'
 CHANGE = 'change'
 
+TIME_SP = 'Setup + Postprocessing'
+TIME_PICOS = 'PICOS'
+TIME_VERIF = 'VERIFICATION'
+
 def flatten(matrix): return [item for row in matrix for item in row]
 
 def calculate_d(k = 1, eps = 0.01, gamma = 0.01):
