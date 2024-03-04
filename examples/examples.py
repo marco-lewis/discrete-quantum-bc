@@ -71,7 +71,7 @@ def XZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, tar
     g[INIT] = g_init
     return file_tag, circuit, g
 
-def Grover_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1, odd = 0):
+def Grover_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1, odd=0):
     N = 2**n
     file_tag = "grover_unmark" + str(n) + "_" + "m" + str(mark)
 
