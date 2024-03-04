@@ -13,7 +13,7 @@ mark = 2
 N = 2**n
 eps = 0.1
 gamma = 0.1
-barrier_degree = 4
+barrier_degree = 2
 k = 2
 
 log_level=logging.INFO
