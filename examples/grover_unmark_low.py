@@ -10,6 +10,7 @@ import sympy as sym
 # 0. Inputs, variable definitions and constants
 n = 2
 mark = 2
+target = 3
 N = 2**n
 eps = 0.01
 gamma = 0.01
@@ -44,7 +45,7 @@ g_inv = [
 g_inv = poly_list(g_inv, variables)
 
 # Unmarked state (3) will never be very likely (>90%)
-g_u = [Z[3] * sym.conjugate(Z[3]) - 0.9]
+g_u = [Z[target] * sym.conjugate(Z[target]) - 0.9]
 g_u = poly_list(g_u, variables)
 
 err = 10 ** -(n+1)
