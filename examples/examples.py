@@ -6,7 +6,7 @@ import sympy as sym
 
 def Z_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0):
     N = 2**n
-    file_tag = "zgate" + str(n) + "k" + str(k)
+    file_tag = f"zgate{n}_k{k}_tgt{target}"
 
     unitary = n_gate(Zgate, n)
     circuit = [unitary] * 6
@@ -28,7 +28,7 @@ def Z_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, targ
     return file_tag, circuit, g
 
 def X_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0):
-    file_tag = "xgate" + str(n) + "k" + str(k)
+    file_tag = f"xgate{n}_k{k}_tgt{target}"
 
     circuit = [n_gate(Xgate, n)] * 6
 
@@ -52,7 +52,7 @@ def X_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, targ
 # experiment = 0, 1 good for n=1
 # n=2, experiment = 0 good, = 1, 3 bad
 def XZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0):
-    file_tag = "x_z" + str(n) + "k" + str(k)
+    file_tag = f"xz{n}_k{k}_tgt{target}"
 
     circuit = [n_gate(Xgate, n), n_gate(Zgate, n)] * 6
 
@@ -73,7 +73,7 @@ def XZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, tar
 
 def Grover_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1, odd=0):
     N = 2**n
-    file_tag = "grover_unmark" + str(n) + "_" + "m" + str(mark)
+    file_tag = f"grover_unmark{n}_m{mark}_tgt{target}"
 
     oracle = np.eye(N, N)
     oracle[mark, mark] = -1

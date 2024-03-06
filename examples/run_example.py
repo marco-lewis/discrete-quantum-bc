@@ -109,7 +109,13 @@ if __name__ == '__main__':
             )
         for key in run_times: run_times[key].append(times[key])
 
-    with open(f"logs/times/{file_tag}.log", 'w') as file: file.write(str(run_times))
     print(row_msg("Process", "Average times"))
     average = lambda l: sum(l)/len(l) if l != 0 else 0
-    for key in run_times: print(row_msg(key, format_time(average(run_times[key]))))
+    average_time = {}
+    for key in run_times:
+        average_time[key] = average(run_times[key])
+        print(row_msg(key, format_time(average_time[key])))
+    with open(f"logs/times/{file_tag}.log", 'w') as file:
+        file.write(str(run_times))
+        file.write("\n")
+        file.write(str(average_time))
