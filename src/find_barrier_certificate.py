@@ -25,7 +25,8 @@ def find_barrier_certificate(circuit : Circuit,
                   log_level=logging.INFO,
                   precision_bound=1e-10,
                   solver='cvxopt',
-                  check=False) -> BarrierCertificate:
+                  check=False,
+                  smt_timeout=300) -> BarrierCertificate:
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
     times : Timings = {}
@@ -90,7 +91,7 @@ def find_barrier_certificate(circuit : Circuit,
     if check:
         logger.info("Performing checks")
         times[TIME_VERIF] = time.time()
-        check_barrier(barrier_certificate, g, Z, idx_pairs, chunks, k, eps, gamma, log_level=log_level)
+        check_barrier(barrier_certificate, g, Z, idx_pairs, chunks, k, eps, gamma, log_level=log_level, timeout=smt_timeout)
         times[TIME_VERIF] = time.time() - times[TIME_VERIF]
     
     time_message = [

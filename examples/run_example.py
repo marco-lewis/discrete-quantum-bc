@@ -32,7 +32,8 @@ def run_example(file_tag : str,
                 log_level=logging.INFO,
                 precision_bound=1e-4,
                 solver='cvxopt',
-                check=False):
+                check=False,
+                smt_timeout=300):
     logger = setup_logger(file_tag + ".log", log_level=log_level)
     try:
         logger.info(str(datetime.datetime.now()))
@@ -42,7 +43,7 @@ def run_example(file_tag : str,
         barrier_certificate, times = find_barrier_certificate(
             circuit, g, Z, barrier_degree=barrier_degree, eps=epsilon,
             gamma=gamma, k=k, verbose=verbose, log_level=log_level,
-            precision_bound=precision_bound, solver=solver, check=check
+            precision_bound=precision_bound, solver=solver, check=check, smt_timeout=smt_timeout
             )
         logger.info("Barrier certificate: " +  str(barrier_certificate))
         with open("logs/barrier_" + file_tag + ".log", 'w') as file:
@@ -74,6 +75,7 @@ parser.add_argument("--mark", type=int, default=0, help="Marked qubit value for 
 parser.add_argument("--verbose", "-v", action='store_true', help="Set verbosity.")
 parser.add_argument("--log-level", type=str, default='INFO', choices=["DEBUG,INFO,WARN,ERROR,CRITICAL"], help="Display level of logging.")
 parser.add_argument("--check", action='store_true', help="Set to check generated barrier with SMT solvers.")
+parser.add_argument("--smt-timeout", type=int, default=300, help="Set timeout for SMT solvers.")
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -108,7 +110,8 @@ if __name__ == '__main__':
             verbose=args.verbose,
             log_level=args.log_level,
             solver=args.solver,
-            check=args.check
+            check=args.check,
+            smt_timeout=args.smt_timeout
             )
         for key in run_times: run_times[key].append(times[key])
 
