@@ -119,7 +119,4 @@ if __name__ == '__main__':
     for key in run_times:
         average_time[key] = average(run_times[key])
         print(row_msg(key, format_time(average_time[key])))
-    with open(f"logs/times/{file_tag}.log", 'w') as file:
-        file.write(str(run_times))
-        file.write("\n")
-        file.write(str(average_time))
+    with open(f"logs/times/{file_tag}.log", 'w') as file: file.write(f"Run Time\n{run_times}\nAverage Time\n{average_time}")
