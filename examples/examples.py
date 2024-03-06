@@ -73,7 +73,8 @@ def XZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, tar
 
 def Grover_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1, odd=0):
     N = 2**n
-    file_tag = f"grover_unmark{n}_m{mark}_tgt{target}"
+    odd_str = "odd" if odd else "even"
+    file_tag = f"grover_unmark{n}_{odd_str}_m{mark}_tgt{target}"
 
     oracle = np.eye(N, N)
     oracle[mark, mark] = -1
