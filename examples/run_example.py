@@ -76,7 +76,6 @@ parser.add_argument("--log-level", type=str, default='INFO', choices=["DEBUG,INF
 parser.add_argument("--check", action='store_true', help="Set to check generated barrier with SMT solvers.")
 
 if __name__ == '__main__':
-    # TODO: Try out Grover's with swapped operators and f_0(X_0)
     args = parser.parse_args()
     Z = [sym.Symbol('z' + str(i), complex=True) for i in range(2**args.n)]
     variables = Z + [z.conjugate() for z in Z]
