@@ -33,8 +33,8 @@ def run_example(file_tag : str,
                 precision_bound=1e-4,
                 solver='cvxopt',
                 check=False,
-                smt_timeout=300):
-    logger = setup_logger(file_tag + ".log", log_level=log_level)
+                smt_timeout=300,
+                logger=logging.getLogger()):
     try:
         logger.info(str(datetime.datetime.now()))
         logger.info("g defined")
@@ -91,13 +91,15 @@ if __name__ == '__main__':
         file_tag, circuit, g = ex.Grover_unmark_example(Z, variables, args.n, args.k, args.target, args.mark, odd='odd' in args.example)
     g = add_invariant(g, Z, variables, args.n)
 
+    logger = setup_logger(file_tag + ".log", log_level=args.log_level)
+    logger.info(f"Running {args.example}")
     run_times = {
         TIME_SP: [],
         TIME_PICOS: [],
         TIME_VERIF: []
     }
     for i in range(1, args.runs+1):
-        print("Run " + str(i))
+        logger.info(f"{args.example} Run {i}")
         times = run_example(
             file_tag=file_tag,
             circuit=circuit,
@@ -111,14 +113,15 @@ if __name__ == '__main__':
             log_level=args.log_level,
             solver=args.solver,
             check=args.check,
-            smt_timeout=args.smt_timeout
+            smt_timeout=args.smt_timeout,
+            logger=logger,
             )
         for key in run_times: run_times[key].append(times[key])
 
-    print(row_msg("Process", "Average times"))
+    logger.info(row_msg("Process", "Average times"))
     average = lambda l: sum(l)/len(l) if l != 0 else 0
     average_time = {}
     for key in run_times:
         average_time[key] = average(run_times[key])
-        print(row_msg(key, format_time(average_time[key])))
+        logger.info(row_msg(key, format_time(average_time[key])))
     with open(f"logs/times/{file_tag}.log", 'w') as file: file.write(f"Run Time\n{run_times}\nAverage Time\n{average_time}")
