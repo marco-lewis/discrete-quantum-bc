@@ -34,7 +34,8 @@ def run_example(file_tag : str,
                 solver='cvxopt',
                 check=False,
                 smt_timeout=300,
-                logger=logging.getLogger()):
+                logger=None):
+    if logger == None: logger = setup_logger(file_tag + ".log", log_level=log_level)
     try:
         logger.info(str(datetime.datetime.now()))
         logger.info("g defined")
