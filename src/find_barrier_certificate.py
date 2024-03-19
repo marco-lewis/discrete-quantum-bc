@@ -63,6 +63,7 @@ def find_barrier_certificate(circuit : Circuit,
         (INDUCTIVE, lambda B, Bk, fk, lam, g: sym.poly(-Bk.subs(zip(Z, np.dot(fk, Z))) + B - np.dot(lam, g[INVARIANT]), variables)),
         ])
     sym_polys = make_sym_polys(barriers, lams, g, unitaries, idx_pairs, chunks, k, sym_poly_eq)
+    logger.info("HSOS polynomials made.")
 
     # 2. Get coefficients out to make symbol dictionary
     logger.info("Fetching coefficients.")
@@ -178,7 +179,6 @@ def make_sym_polys(barriers : list[Barrier], lams : dict[str, LamList], g : Semi
     sym_polys[INDUCTIVE] = [sym_poly_eq[INDUCTIVE](barriers[fst_idx], barriers[last_idx], unitary_k, lam, g) for (unitary_k, fst_idx, last_idx), lam in zip(chunks, lams[INDUCTIVE])]
     logger.info("Polynomials for " + INDUCTIVE + " made.")
     logger.debug(sym_polys[INDUCTIVE])
-    logger.info("HSOS polynomials made.")
     return sym_polys
 
 def get_lam_coeffs(lams : dict[str, LamList]) -> dict[str, list[sym.Symbol]]:
@@ -338,8 +338,9 @@ def fetch_values(barriers : list[Barrier],
     symbols.sort(key = lambda symbol: symbol.name)
     symbol_values = get_symbol_values(symbols, symbol_var_dict, precision_bound)
 
-    debug_print_lambda(lams, symbol_values)
-    debug_print_matrices(cvx_matrices)
+    if logger.level == logging.DEBUG:
+        debug_print_lambda(lams, symbol_values)
+        debug_print_matrices(cvx_matrices)
 
     barrier_certificate = get_barrier_certificate_values(barriers, symbol_values, unitaries)
     logger.info("Barriers made.")
