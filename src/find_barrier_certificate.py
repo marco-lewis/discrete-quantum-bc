@@ -62,6 +62,7 @@ def find_barrier_certificate(circuit : Circuit,
         (CHANGE, lambda B, Bnext, lam, g: sym.poly(-Bnext + B - np.dot(lam, g[INVARIANT]) + gamma, variables)),
         (INDUCTIVE, lambda B, Bk, fk, lam, g: sym.poly(-Bk.subs(zip(Z, np.dot(fk, Z))) + B - np.dot(lam, g[INVARIANT]), variables)),
         ])
+    logger.info("Making HSOS polynomials...")
     sym_polys = make_sym_polys(barriers, lams, g, unitaries, idx_pairs, chunks, k, sym_poly_eq)
     logger.info("HSOS polynomials made.")
 
@@ -155,7 +156,6 @@ def make_lambdas(variables : list[sym.Symbol], g : SemiAlgebraicDict, unitaries 
 
 def make_sym_polys(barriers : list[Barrier], lams : dict[str, LamList], g : SemiAlgebraicDict, unitaries : Unitaries, idx_pairs : list[tuple[int,int]], chunks : list[Chunk], k : int, sym_poly_eq : dict[callable]) -> dict[str, list[sym.Poly]]:
     sym_polys : dict[str, list[sym.Poly]] = {}    
-    logger.info("Making HSOS polynomials...")
     sym_polys[INIT] = [sym_poly_eq[INIT](barriers[0], lams[INIT][0], g)]
     logger.info("Polynomial for " + INIT + " made.")
     logger.debug(sym_polys[INIT])
