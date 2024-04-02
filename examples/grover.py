@@ -27,7 +27,7 @@ temp = np.zeros((N,N))
 temp[0,0] = 1
 diffusion_oracle = 2*temp - diffusion_oracle
 
-diffusion = np.dot(HNgate(n), np.dot(diffusion_oracle, HNgate(n)))
+diffusion = np.dot(n_gate(Hgate, n), np.dot(diffusion_oracle, n_gate(Hgate, n)))
 faulty_grover = np.dot(diffusion, oracle)
 circuit = [oracle, diffusion]
 
