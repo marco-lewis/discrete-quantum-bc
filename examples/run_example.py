@@ -93,6 +93,7 @@ if __name__ == '__main__':
     g = add_invariant(g, Z, variables, args.n)
 
     logger = setup_logger(file_tag + ".log", log_level=args.log_level)
+    logger.info(f"Storing logs in {logger.handlers[-1].baseFilename}")
     logger.info(f"Running {args.example}")
     run_times = {
         TIME_SP: [],
