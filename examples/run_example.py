@@ -120,6 +120,7 @@ if __name__ == '__main__':
             )
         for key in run_times: run_times[key].append(times[key])
 
+    logger.info("Average Time Table")
     logger.info(row_msg("Process", "Average times"))
     average = lambda l: sum(l)/len(l) if l != 0 else 0
     average_time = {}
