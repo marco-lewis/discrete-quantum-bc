@@ -5,7 +5,6 @@ import numpy as np
 import sympy as sym
 
 def Z_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0):
-    N = 2**n
     file_tag = f"zgate{n}_k{k}_tgt{target}"
 
     unitary = n_gate(Zgate, n)
@@ -27,20 +26,21 @@ def Z_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, targ
     return file_tag, circuit, g
 
 def X_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0):
+    N = 2**n
     file_tag = f"xgate{n}_k{k}_tgt{target}"
 
     circuit = [n_gate(Xgate, n)] * 6
 
     err = 10**-(n+1)
-    g_u = [Z[target] * sym.conjugate(Z[target]) - (1/2**n + 2*err)]
+    g_u = [Z[target] * sym.conjugate(Z[target]) - (1/N + 2*err)]
     g_u = poly_list(g_u, variables)
 
     g_init = [
         1j*(Z[0] - sym.conjugate(Z[0])),
         -1j*(Z[0] - sym.conjugate(Z[0])),
         ]
-    g_init += [z * sym.conjugate(z) - (1/2**n - err) for z in Z]
-    g_init += [1/2**n + err - z * sym.conjugate(z) for z in Z]
+    g_init += [z * sym.conjugate(z) - (1/N - err) for z in Z]
+    g_init += [1/N + err - z * sym.conjugate(z) for z in Z]
     g_init = poly_list(g_init, variables)
 
     g = {}
