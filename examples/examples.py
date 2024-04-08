@@ -35,11 +35,7 @@ def X_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, targ
     g_u = [Z[target] * sym.conjugate(Z[target]) - (1/N + 2*err)]
     g_u = poly_list(g_u, variables)
 
-    g_init = [
-        1j*(Z[0] - sym.conjugate(Z[0])),
-        -1j*(Z[0] - sym.conjugate(Z[0])),
-        ]
-    g_init += [z * sym.conjugate(z) - (1/N - err) for z in Z]
+    g_init = [z * sym.conjugate(z) - (1/N - err) for z in Z]
     g_init += [1/N + err - z * sym.conjugate(z) for z in Z]
     g_init = poly_list(g_init, variables)
 
