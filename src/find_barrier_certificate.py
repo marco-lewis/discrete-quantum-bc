@@ -29,7 +29,7 @@ def find_barrier_certificate(circuit : Circuit,
                   smt_timeout=300) -> BarrierCertificate:
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
-    times : Timings = {}
+    times : Timings = defaultdict(lambda: 0)
     times[TIME_SP] = time.time()
     
     d = calculate_d(k, eps, gamma)
@@ -80,7 +80,7 @@ def find_barrier_certificate(circuit : Circuit,
 
     # 4. Solve using PICOS
     exit_prog, times[TIME_PICOS] = run_picos(cvx_constraints, solver, verbose)
-    if exit_prog: sys.exit(exit_prog)
+    if exit_prog: return 0, times
     
     # 5. Return the barrier in a readable format
     post_time = time.time()
@@ -278,17 +278,17 @@ def run_picos(cvx_constraints : list[picos.constraints.Constraint], solver : str
         sys.stderr = LoggerWriter(picos_logger.error)
         picos_time = time.time()
         prob.solve(verbose=bool(verbose), solver=solver)
-        picos_time = time.time() - picos_time
     except Exception as e:
         logger.exception(e)
-        return 1, 0
+        return 1, picos_time
     finally:
         sys.stdout = sys.__stdout__
         sys.stderr = sys.__stderr__
+        picos_time = time.time() - picos_time
     logger.info("Problem status: " + prob.status)
     if "infeasible" in prob.status or "unbounded" in prob.status:
         logger.error("Cannot get barrier from problem.")
-        return 1, 0
+        return 1, picos_time
     logger.info("Solution found.")
     return 0, picos_time
 
