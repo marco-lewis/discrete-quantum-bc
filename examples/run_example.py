@@ -62,7 +62,7 @@ parser = argparse.ArgumentParser(
     description="Run an example.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-examples = ['xgate','zgate','xzgate','grover_even_unmark','grover_odd_unmark']
+examples = ['xgate','zgate','xzgate','grover_even_unmark','grover_odd_unmark','grover_dual']
 parser.add_argument("--example", "-ex", type=str, choices=examples, required=True, help="Example to run.")
 parser.add_argument("--runs", type=int, default=1, help="Number of runs to perform.")
 parser.add_argument("--solver", type=str, default='cvxopt', choices=['cvxopt', 'conelp', 'mosek'], help="SDP solver to use.")
@@ -90,6 +90,8 @@ if __name__ == '__main__':
         file_tag, circuit, g = ex.XZ_example(Z, variables, args.n, args.k, args.target)
     if args.example in ['grover_even_unmark', 'grover_odd_unmark']:
         file_tag, circuit, g = ex.Grover_unmark_example(Z, variables, args.n, args.k, args.target, args.mark, odd='odd' in args.example)
+    if args.example == 'grover_dual':
+        file_tag, circuit, g = ex.Grover_dual_unmark_example(Z, variables, args.n, args.k, args.target, args.mark)
     g = add_invariant(g, Z, variables, args.n)
 
     logger = setup_logger(file_tag + ".log", log_level=args.log_level)
