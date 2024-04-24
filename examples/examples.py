@@ -66,7 +66,7 @@ def XZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, tar
 
 def Grover_dual_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1):
     N = 2**n
-    file_tag = f"grover_single{n}_k{k}_m{mark}_tgt{target}"
+    file_tag = f"grover_dual{n}_k{k}_m{mark}_tgt{target}"
     if target == mark: raise Exception("target value needs to be different from mark value.")
 
     oracle = np.eye(N, N)
