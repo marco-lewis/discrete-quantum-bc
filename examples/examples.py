@@ -64,6 +64,36 @@ def XZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, tar
     g[INIT] = g_init
     return file_tag, circuit, g
 
+def Grover_simple_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1):
+    N = 2**n
+    file_tag = f"grover_simple{n}_k{k}_m{mark}_tgt{target}"
+    if target == mark: raise Exception("target value needs to be different from mark value.")
+
+    oracle = np.eye(N, N)
+    oracle[mark, mark] = -1
+    diffusion_oracle = np.eye(N,N)
+    temp = np.zeros((N,N))
+    temp[0,0] = 1
+    diffusion_oracle = 2*temp - diffusion_oracle
+
+    diffusion = np.dot(n_gate(Hgate, n), np.dot(diffusion_oracle, n_gate(Hgate, n)))
+    circuit = [np.dot(diffusion, oracle)] * 4
+
+    g_u = [Z[target] * sym.conjugate(Z[target]) - 0.9]
+    g_u = poly_list(g_u, variables)
+
+    g_init = []
+    g_init += [(z * sym.conjugate(z)) - 1/N for z in Z]
+    g_init += [1/N - (z * sym.conjugate(z)) for z in Z]
+    g_init += [(z - sym.conjugate(z))/2j for z in Z]
+    g_init += [- (z - sym.conjugate(z))/2j for z in Z]
+    g_init = poly_list(g_init, variables)
+
+    g = {}
+    g[UNSAFE] = g_u
+    g[INIT] = g_init
+    return file_tag, circuit, g
+
 def Grover_dual_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1):
     N = 2**n
     file_tag = f"grover_dual{n}_k{k}_m{mark}_tgt{target}"

@@ -62,7 +62,7 @@ parser = argparse.ArgumentParser(
     description="Run an example.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-examples = ['xgate','zgate','xzgate','grover_even_unmark','grover_odd_unmark','grover_dual']
+examples = ['xgate','zgate','xzgate','grover_even_unmark','grover_odd_unmark','grover_dual','grover_simple']
 parser.add_argument("--example", "-ex", type=str, choices=examples, required=True, help="Example to run.")
 parser.add_argument("--runs", type=int, default=1, help="Number of runs to perform.")
 parser.add_argument("--solver", type=str, default='cvxopt', choices=['cvxopt', 'conelp', 'mosek'], help="SDP solver to use.")
@@ -84,14 +84,17 @@ if __name__ == '__main__':
     variables = Z + [z.conjugate() for z in Z]
     if args.example == 'zgate':
         file_tag, circuit, g = ex.Z_example(Z, variables, args.n, args.k, args.target)
-    if args.example == 'xgate':
+    elif args.example == 'xgate':
         file_tag, circuit, g = ex.X_example(Z, variables, args.n, args.k, args.target)
-    if args.example == 'xzgate':
+    elif args.example == 'xzgate':
         file_tag, circuit, g = ex.XZ_example(Z, variables, args.n, args.k, args.target)
-    if args.example in ['grover_even_unmark', 'grover_odd_unmark']:
+    elif args.example in ['grover_even_unmark', 'grover_odd_unmark']:
         file_tag, circuit, g = ex.Grover_unmark_example(Z, variables, args.n, args.k, args.target, args.mark, odd='odd' in args.example)
-    if args.example == 'grover_dual':
+    elif args.example == 'grover_dual':
         file_tag, circuit, g = ex.Grover_dual_unmark_example(Z, variables, args.n, args.k, args.target, args.mark)
+    elif args.example == 'grover_simple':
+        file_tag, circuit, g = ex.Grover_dual_unmark_example(Z, variables, args.n, args.k, args.target, args.mark)
+    else: raise Exception(f"Invalid example. Choose one from {examples}")
     g = add_invariant(g, Z, variables, args.n)
 
     logger = setup_logger(file_tag + ".log", log_level=args.log_level)
