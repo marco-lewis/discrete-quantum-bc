@@ -89,7 +89,7 @@ if __name__ == '__main__':
     elif args.example == 'xzgate':
         file_tag, circuit, g = ex.XZ_example(Z, variables, args.n, args.k, args.target)
     elif args.example == 'cnot':
-        file_tag, circuit, g = ex.CNOT_example(Z, variables, args.n, args.k)
+        file_tag, circuit, g = ex.CNOT_example(Z, variables, args.n, args.k, args.mark)
     elif args.example in ['grover_even_unmark', 'grover_odd_unmark']:
         file_tag, circuit, g = ex.Grover_unmark_example(Z, variables, args.n, args.k, args.target, args.mark, odd='odd' in args.example)
     elif args.example == 'grover_dual':
