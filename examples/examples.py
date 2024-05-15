@@ -64,6 +64,24 @@ def XZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, tar
     g[INIT] = g_init
     return file_tag, circuit, g
 
+def CNOT_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
+    if not(n == 2): raise Exception('Number of qubits need to be even.')
+    N = 2**n
+    file_tag = f"cnot_k{k}_ctrl{2}"
+
+    circuit = [CNOTgate] * 4
+
+    g_u = [Z[0] * sym.conjugate(Z[0]) + Z[1] * sym.conjugate(Z[1]) - 0.9]
+    g_u = poly_list(g_u, variables)
+
+    g_init = [Z[2] * sym.conjugate(Z[2]) - 0.9]
+    g_init = poly_list(g_init, variables)
+
+    g = {}
+    g[UNSAFE] = g_u
+    g[INIT] = g_init
+    return file_tag, circuit, g
+
 def Grover_simple_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1):
     N = 2**n
     file_tag = f"grover_simple{n}_k{k}_m{mark}_tgt{target}"
