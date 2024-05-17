@@ -6,6 +6,7 @@ Zgate = np.array([[1,0],[0,-1]])
 Tgate = np.array([[1,0],[0,np.exp(1j*np.pi/4)]])
 SQRTXgate = 1/2 * np.array([[1+1j, 1-1j], [1-1j, 1+1j]])
 CNOTgate = np.array([[1,0,0,0], [0,1,0,0], [0,0,0,1], [0,0,1,0]])
+CZgate = np.array([[1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,-1]])
 
 Hgate = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
 

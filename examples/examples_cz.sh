@@ -1,0 +1,1 @@
+python -m examples.run_example -ex cz --check -n 2 -k 2
