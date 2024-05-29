@@ -62,7 +62,7 @@ parser = argparse.ArgumentParser(
     description="Run an example.",
     formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-examples = ['xgate','zgate','xzgate','cx','cnot','cz','ch','grover_even_unmark','grover_odd_unmark','grover_dual','grover_simple']
+examples = ['xgate','zgate','xzgate','cx','cnot','cz','ch','ccx','grover_even_unmark','grover_odd_unmark','grover_dual','grover_simple']
 parser.add_argument("--example", "-ex", type=str, choices=examples, required=True, help="Example to run.")
 parser.add_argument("--runs", type=int, default=1, help="Number of runs to perform.")
 parser.add_argument("--solver", type=str, default='cvxopt', choices=['cvxopt', 'conelp', 'mosek'], help="SDP solver to use.")
@@ -94,6 +94,8 @@ if __name__ == '__main__':
         file_tag, circuit, g = ex.CZ_example(Z, variables, args.n, args.k)
     elif args.example == 'ch':
         file_tag, circuit, g = ex.CH_example(Z, variables, args.n, args.k)
+    elif args.example == 'ccx':
+        file_tag, circuit, g = ex.CCX_example(Z, variables, args.n, args.k)
     elif args.example in ['grover_even_unmark', 'grover_odd_unmark']:
         file_tag, circuit, g = ex.Grover_unmark_example(Z, variables, args.n, args.k, args.target, args.mark, odd='odd' in args.example)
     elif args.example == 'grover_dual':

@@ -119,6 +119,24 @@ def CH_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
     g[INIT] = g_init
     return file_tag, circuit, g
 
+def CCX_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
+    if not(n == 3): raise Exception('Number of qubits (n) needs to be 3.')
+    N = 2**n
+    file_tag = f"ccx_k{k}"
+
+    circuit = [CCXgate] * 4
+
+    g_u = [sum([z * sym.conjugate(z) for z in Z[:-2]]) - 0.2]
+    g_u = poly_list(g_u, variables)
+
+    g_init = [Z[-1] * sym.conjugate(Z[-1]) - 0.9]
+    g_init = poly_list(g_init, variables)
+
+    g = {}
+    g[UNSAFE] = g_u
+    g[INIT] = g_init
+    return file_tag, circuit, g
+
 def Grover_simple_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1):
     N = 2**n
     file_tag = f"grover_simple{n}_k{k}_m{mark}_tgt{target}"

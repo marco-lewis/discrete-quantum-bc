@@ -1,0 +1,1 @@
+python -m examples.run_example -ex ccx --check -n 3 -k 2
