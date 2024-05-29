@@ -104,11 +104,11 @@ def CZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
 def CH_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
     if not(n == 2): raise Exception('Number of qubits needs to be even.')
     N = 2**n
-    file_tag = f"cz_k{k}"
+    file_tag = f"ch_k{k}"
 
-    circuit = [CZgate] * 4
+    circuit = [CHgate] * 4
 
-    g_u = [sum([z * sym.conjugate(z) for z in Z[:-1]]) - 0.2]
+    g_u = [sum([z * sym.conjugate(z) for z in Z[:-2]]) - 0.2]
     g_u = poly_list(g_u, variables)
 
     g_init = [Z[3] * sym.conjugate(Z[3]) - 0.9]
