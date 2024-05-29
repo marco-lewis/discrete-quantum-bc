@@ -64,12 +64,12 @@ def XZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, tar
     g[INIT] = g_init
     return file_tag, circuit, g
 
-def CNOT_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1, ctrl_mark=0):
+def CX_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1, ctrl_mark=0):
     if not(n == 2): raise Exception('Number of qubits needs to be even.')
     N = 2**n
     file_tag = f"cnot_k{k}_ctrl{ctrl_mark}"
 
-    circuit = [CNOTgate] * 4
+    circuit = [CXgate] * 4
 
     modifier = 2 *(1 - ctrl_mark)
     g_u = [Z[modifier] * sym.conjugate(Z[modifier]) + Z[modifier + 1] * sym.conjugate(Z[modifier + 1]) - 0.9]
@@ -84,6 +84,24 @@ def CNOT_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1, c
     return file_tag, circuit, g
 
 def CZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
+    if not(n == 2): raise Exception('Number of qubits needs to be even.')
+    N = 2**n
+    file_tag = f"cz_k{k}"
+
+    circuit = [CZgate] * 4
+
+    g_u = [sum([z * sym.conjugate(z) for z in Z[:-1]]) - 0.2]
+    g_u = poly_list(g_u, variables)
+
+    g_init = [Z[3] * sym.conjugate(Z[3]) - 0.9]
+    g_init = poly_list(g_init, variables)
+
+    g = {}
+    g[UNSAFE] = g_u
+    g[INIT] = g_init
+    return file_tag, circuit, g
+
+def CH_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
     if not(n == 2): raise Exception('Number of qubits needs to be even.')
     N = 2**n
     file_tag = f"cz_k{k}"

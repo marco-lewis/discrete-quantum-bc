@@ -4,11 +4,21 @@ Xgate = np.array([[0,1],[1,0]])
 Ygate = np.array([[0, 1j],[-1j,0]])
 Zgate = np.array([[1,0],[0,-1]])
 Tgate = np.array([[1,0],[0,np.exp(1j*np.pi/4)]])
-SQRTXgate = 1/2 * np.array([[1+1j, 1-1j], [1-1j, 1+1j]])
-CNOTgate = np.array([[1,0,0,0], [0,1,0,0], [0,0,0,1], [0,0,1,0]])
-CZgate = np.array([[1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,-1]])
-
 Hgate = np.dot(np.array([[1,1],[1,-1]]), 1/np.sqrt(2))
+SQRTXgate = 1/2 * np.array([[1+1j, 1-1j], [1-1j, 1+1j]])
+
+CXgate = np.array([[1,0,0,0], [0,1,0,0], [0,0,0,1], [0,0,1,0]])
+CZgate = np.array([[1,0,0,0], [0,1,0,0], [0,0,1,0], [0,0,0,-1]])
+CHgate = np.array([[1,0,0,0], [0,1,0,0], [0,0,1,1], [0,0,1,-1]])
+CCXgate = np.array([[1,0,0,0,0,0,0,0],
+                    [0,1,0,0,0,0,0,0],
+                    [0,0,1,0,0,0,0,0],
+                    [0,0,0,1,0,0,0,0],
+                    [0,0,0,0,1,0,0,0],
+                    [0,0,0,0,0,1,0,0],
+                    [0,0,0,0,0,0,0,1],
+                    [0,0,0,0,0,0,1,0],])
+
 
 Rx = lambda phi: np.array([[np.cos(phi/2), -1j*np.sin(phi/2)],[-1j*np.sin(phi/2), np.cos(phi/2)]])
 Ry = lambda phi: np.array([[np.cos(phi/2), -1*np.sin(phi/2)],[-1*np.sin(phi/2), np.cos(phi/2)]])
