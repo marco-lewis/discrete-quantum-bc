@@ -6,3 +6,4 @@ logs/*/*.log
 .vscode/*
 src/testing.py
 Deprecated/*
+env/*
