@@ -58,9 +58,9 @@ def find_barrier_certificate(circuit : Circuit,
     sym_poly_eq = dict([
         (INIT, lambda B, lam, g: sym.poly(-B - np.dot(lam, g[INIT]), variables)),
         (UNSAFE, lambda B, lam, g: sym.poly(B - d - np.dot(lam, g[UNSAFE]), variables)),
-        (DIFF, lambda B, f, lam, g: sym.poly(-B.subs(zip(Z, np.dot(f, Z))) + B - np.dot(lam, g[INVARIANT]) + eps, variables)),
+        (DIFF, lambda B, f, lam, g: sym.poly(-B.as_expr().subs(zip(Z, np.dot(f, Z)), simultaneous=True) + B - np.dot(lam, g[INVARIANT]) + eps, variables)),
         (CHANGE, lambda B, Bnext, lam, g: sym.poly(-Bnext + B - np.dot(lam, g[INVARIANT]) + gamma, variables)),
-        (INDUCTIVE, lambda B, Bk, fk, lam, g: sym.poly(-Bk.subs(zip(Z, np.dot(fk, Z))) + B - np.dot(lam, g[INVARIANT]), variables)),
+        (INDUCTIVE, lambda B, Bk, fk, lam, g: sym.poly(-Bk.as_expr().subs(zip(Z, np.dot(fk, Z)), simultaneous=True) + B - np.dot(lam, g[INVARIANT]), variables)),
         ])
     logger.info("Making HSOS polynomials...")
     sym_polys = make_sym_polys(barriers, lams, g, unitaries, idx_pairs, chunks, k, sym_poly_eq)
