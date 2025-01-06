@@ -61,23 +61,24 @@ def run_checks(z3_barriers, z3_diffs, z3_changes, z3_k_diffs, z3_constraints, k=
     constraint_val = Complex('constraint_val')
 
     logger.info("Check " + INIT)
-    run_solver([z3.And(z3_constraints[INIT]), constraint_val == z3_barriers[0][1], constraint_val.r > 0], tool=DREAL, timeout=timeout, docker=docker)
+    run = lambda conds: run_solver(conds, tool=DREAL, timeout=timeout, docker=docker)
+    run([z3.And(z3_constraints[INIT]), constraint_val == z3_barriers[0][1], constraint_val.r > 0])
 
     for unitary, z3_barrier in z3_barriers:
         logger.info("Check " + UNSAFE + " for unitary\n" + str(unitary))
-        run_solver([z3.And(z3_constraints[UNSAFE]), constraint_val == z3_barrier, constraint_val.r < d], tool=DREAL, timeout=timeout, docker=docker)
+        run([z3.And(z3_constraints[UNSAFE]), constraint_val == z3_barrier, constraint_val.r < d])
 
     for idx, z3_diff in enumerate(z3_diffs):
         logger.info("Check " + DIFF + str(idx))
-        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_diff, constraint_val.r > eps], tool=DREAL, timeout=timeout, docker=docker)
+        run([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_diff, constraint_val.r > eps])
     
     for idx, z3_change in enumerate(z3_changes):
         logger.info("Check " + CHANGE + str(idx))
-        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_change, constraint_val.r > gamma], tool=DREAL, timeout=timeout, docker=docker)
+        run([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_change, constraint_val.r > gamma])
 
     for idx, z3_k_diff in enumerate(z3_k_diffs):
         logger.info("Check " + INDUCTIVE + str(idx))
-        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_k_diff, constraint_val.r > 0], tool=DREAL, timeout=timeout, docker=docker)
+        run([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_k_diff, constraint_val.r > 0])
     logger.info("All constraints checked.")
 
 
