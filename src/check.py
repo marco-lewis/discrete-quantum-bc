@@ -24,6 +24,7 @@ def check_barrier(barrier_certificate : BarrierCertificate,
                   eps = 0.01,
                   gamma = 0.01,
                   timeout = 300,
+                  docker=False,
                   log_level = logging.INFO):
     logger.setLevel(log_level)
     
@@ -52,35 +53,35 @@ def check_barrier(barrier_certificate : BarrierCertificate,
     for key in g: z3_constraints[key] = [_sympy_poly_to_z3(var_z3_dict, p).r >= 0 for p in g[key]]
     # Alternative to find values of g when solving
     # for key in g: z3_constraints[key] = [z3.And(Complex('g' + key + str(idx)) == _sympy_poly_to_z3(var_z3_dict, poly), Complex('g' + key + str(idx)).r >= 0) for idx, poly in enumerate(g[key])]
-    run_checks(z3_barriers, z3_diffs, z3_changes, z3_k_diffs, z3_constraints, k=k, eps=eps, gamma=gamma, timeout=timeout)
+    run_checks(z3_barriers, z3_diffs, z3_changes, z3_k_diffs, z3_constraints, k=k, eps=eps, gamma=gamma, timeout=timeout, docker=docker)
 
 
-def run_checks(z3_barriers, z3_diffs, z3_changes, z3_k_diffs, z3_constraints, k=1, eps=0.01, gamma=0.01, timeout=300):
+def run_checks(z3_barriers, z3_diffs, z3_changes, z3_k_diffs, z3_constraints, k=1, eps=0.01, gamma=0.01, timeout=300, docker=False):
     d = calculate_d(k, eps, gamma)
     constraint_val = Complex('constraint_val')
 
     logger.info("Check " + INIT)
-    run_solver([z3.And(z3_constraints[INIT]), constraint_val == z3_barriers[0][1], constraint_val.r > 0], tool=DREAL, timeout=timeout)
+    run_solver([z3.And(z3_constraints[INIT]), constraint_val == z3_barriers[0][1], constraint_val.r > 0], tool=DREAL, timeout=timeout, docker=docker)
 
     for unitary, z3_barrier in z3_barriers:
         logger.info("Check " + UNSAFE + " for unitary\n" + str(unitary))
-        run_solver([z3.And(z3_constraints[UNSAFE]), constraint_val == z3_barrier, constraint_val.r < d], tool=DREAL, timeout=timeout)
+        run_solver([z3.And(z3_constraints[UNSAFE]), constraint_val == z3_barrier, constraint_val.r < d], tool=DREAL, timeout=timeout, docker=docker)
 
     for idx, z3_diff in enumerate(z3_diffs):
         logger.info("Check " + DIFF + str(idx))
-        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_diff, constraint_val.r > eps], tool=DREAL, timeout=timeout)
+        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_diff, constraint_val.r > eps], tool=DREAL, timeout=timeout, docker=docker)
     
     for idx, z3_change in enumerate(z3_changes):
         logger.info("Check " + CHANGE + str(idx))
-        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_change, constraint_val.r > gamma], tool=DREAL, timeout=timeout)
+        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_change, constraint_val.r > gamma], tool=DREAL, timeout=timeout, docker=docker)
 
     for idx, z3_k_diff in enumerate(z3_k_diffs):
         logger.info("Check " + INDUCTIVE + str(idx))
-        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_k_diff, constraint_val.r > 0], tool=DREAL, timeout=timeout)
+        run_solver([z3.And(z3_constraints[INVARIANT]), constraint_val == z3_k_diff, constraint_val.r > 0], tool=DREAL, timeout=timeout, docker=docker)
     logger.info("All constraints checked.")
 
 
-def run_solver(conds : list[z3.ExprRef], tool=Z3, delta=0.001, timeout=300):
+def run_solver(conds : list[z3.ExprRef], tool=Z3, delta=0.001, timeout=300, docker=False):
     tactic = z3.Then('solve-eqs','smt')
     s = tactic.solver()
     s.set(timeout=timeout)
@@ -94,7 +95,7 @@ def run_solver(conds : list[z3.ExprRef], tool=Z3, delta=0.001, timeout=300):
         model = str(s.model()) if sat == z3.sat else str([])
     elif tool == DREAL:
         logger.info("Using dreal")
-        sat, model = run_dreal(s, delta=delta, log_level=logger.level, timeout=timeout)
+        sat, model = run_dreal(s, delta=delta, log_level=logger.level, timeout=timeout, docker=docker)
     else: raise_error("No valid tool selected. Use Z3 or dReal")
 
     if sat in [z3.unsat, DREAL_UNSAT]: logger.info("Constraint satisfied.")
