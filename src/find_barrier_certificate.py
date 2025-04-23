@@ -1,7 +1,8 @@
 from src.check import check_barrier
 from src.log_settings import LoggerWriter
-from src.typings import *
-from src.utils import *
+from src.typings import Barrier, BarrierCertificate, Chunk, Circuit, Idx, LamList, SemiAlgebraicDict, Timings, Unitaries
+from src.utils import INVARIANT, INIT, UNSAFE, DIFF, CHANGE, INDUCTIVE, TIME_PICOS, TIME_SP, TIME_VERIF
+from src.utils import calculate_d, convert_exprs, convert_exprs_of_matrix, create_polynomial, flatten, format_time, generate_variables, row_msg
 
 from collections import defaultdict
 import time
@@ -9,6 +10,9 @@ import logging
 import sys
 
 from iteration_utilities import grouper
+import numpy as np
+import picos
+import sympy as sym
 
 logger = logging.getLogger("findbc")
 picos_logger = logging.getLogger("picos")

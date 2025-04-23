@@ -1,17 +1,16 @@
-import picos
 import numpy as np
 import sympy as sym
 
-Unitary = np.ndarray
-Unitaries = list[Unitary]
-Circuit = list[Unitary]
-Barrier = sym.Poly
-BarrierCertificate = list[tuple[Unitary, Barrier]]
-Chunk = tuple[np.ndarray,int,int]
-LamPoly = sym.Poly
-LamVector = list[LamPoly]
-LamList = list[LamVector]
-Idx = int
-SemiAlgebraic = list[sym.Poly]
-SemiAlgebraicDict = dict[str, SemiAlgebraic]
-Timings = dict[str, float]
+type Unitary = np.ndarray
+type Unitaries = list[Unitary]
+type Circuit = list[Unitary]
+type Barrier = sym.Poly
+type BarrierCertificate = list[tuple[Unitary, Barrier]]
+type Chunk = tuple[np.ndarray,int,int]
+type LamPoly = sym.Poly
+type LamVector = list[LamPoly]
+type LamList = list[LamVector]
+type Idx = int
+type SemiAlgebraic = list[sym.Poly]
+type SemiAlgebraicDict = dict[str, SemiAlgebraic]
+type Timings = dict[str, float]
