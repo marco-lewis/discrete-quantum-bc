@@ -1,7 +1,7 @@
 from src.check import check_barrier
 from src.log_settings import LoggerWriter
 from src.typings import Barrier, BarrierCertificate, Chunk, Circuit, Idx, LamList, SemiAlgebraicDict, Timings, Unitaries
-from src.utils import INVARIANT, INIT, UNSAFE, DIFF, CHANGE, INDUCTIVE, TIME_PICOS, TIME_SP, TIME_VERIF
+from src.utils import INVARIANT, INIT, UNSAFE, DIFF, CHANGE, INDUCTIVE, REACH, REACHINIT, TIME_PICOS, TIME_SP, TIME_VERIF
 from src.utils import calculate_d, convert_exprs, convert_exprs_of_matrix, create_polynomial, flatten, format_time, generate_variables, row_msg
 
 from collections import defaultdict
@@ -31,6 +31,7 @@ def find_barrier_certificate(circuit : Circuit,
                   solver='cvxopt',
                   check=False,
                   smt_timeout=300,
+                  isreach=False,
                   docker=False) -> BarrierCertificate:
     logger.setLevel(log_level)
     picos_logger.setLevel(log_level)
@@ -56,7 +57,11 @@ def find_barrier_certificate(circuit : Circuit,
     logger.info("Setting up lambda terms and utilities...")
     idx_pairs = make_idx_pairs(circuit, unitary_idxs)
     chunks = make_chunks(circuit, unitaries, k)
-    lams = make_lambdas(variables, g, unitaries, idx_pairs, chunks)
+    if isreach:
+        lams = {}
+        lams[REACHINIT] = [[create_polynomial(variables, deg=get_degree(g[REACHINIT][i]), coeff_tok='s_' + REACHINIT + ';' + str(i) + 'c') for i in range(len(g[REACHINIT]))]]
+        lams[REACH] = [[create_polynomial(variables, deg=get_degree(g[REACH][i]), coeff_tok='s_' + REACH + str(j) +';' + str(i) + 'c') for i in range(len(g[REACH]))] for j in range(len(unitaries))]
+    else: lams = make_lambdas(variables, g, unitaries, idx_pairs, chunks)
     logger.info("Lambda functions and utilities set up.")
     logger.debug("Index pairs: " + str(idx_pairs))
     logger.debug("Chunks: " + str(chunks))
@@ -66,9 +71,15 @@ def find_barrier_certificate(circuit : Circuit,
         (DIFF, lambda B, f, lam, g: sym.poly(-B.as_expr().subs(zip(Z, np.dot(f, Z)), simultaneous=True) + B - np.dot(lam, g[INVARIANT]) + eps, variables)),
         (CHANGE, lambda B, Bnext, lam, g: sym.poly(-Bnext + B - np.dot(lam, g[INVARIANT]) + gamma, variables)),
         (INDUCTIVE, lambda B, Bk, fk, lam, g: sym.poly(-Bk.as_expr().subs(zip(Z, np.dot(fk, Z)), simultaneous=True) + B - np.dot(lam, g[INVARIANT]), variables)),
+        (REACHINIT, lambda B, lam, g: sym.poly(-B - np.dot(lam, g[REACHINIT]) + eps, variables)),
+        (REACH, lambda B, f, lam, g: sym.poly(-B.as_expr().subs(zip(Z, np.dot(f, Z)), simultaneous=True) + B - np.dot(lam, g[REACH]) - gamma, variables)),
         ])
     logger.info("Making HSOS polynomials...")
-    sym_polys = make_sym_polys(barriers, lams, g, unitaries, idx_pairs, chunks, k, sym_poly_eq)
+    if isreach:
+        sym_polys = {}
+        sym_polys[REACHINIT] = [sym_poly_eq[REACHINIT](barriers[0], lams[REACHINIT][0], g)]
+        sym_polys[REACH] = [sym_poly_eq[REACH](barriers[j], unitaries[j], lams[REACH][j], g) for j in range(len(unitaries))]
+    else: sym_polys = make_sym_polys(barriers, lams, g, unitaries, idx_pairs, chunks, k, sym_poly_eq)
     logger.info("HSOS polynomials made.")
 
     # 2. Get coefficients out to make symbol dictionary
@@ -338,7 +349,8 @@ def fetch_values(barriers : list[Barrier],
                  lams : dict[str, LamList],
                  cvx_matrices : list[picos.HermitianVariable]) -> BarrierCertificate:
     logger.info("Fetching values...")
-    symbols : list[sym.Symbol] = barrier_coeffs + lam_coeffs[INIT] + lam_coeffs[UNSAFE] + lam_coeffs[DIFF] + lam_coeffs[INDUCTIVE]
+    symbols : list[sym.Symbol] = barrier_coeffs
+    for k in lam_coeffs: symbols += lam_coeffs[k]
     symbols = list(set(symbols))
     symbols.sort(key = lambda symbol: symbol.name)
     symbol_values = get_symbol_values(symbols, symbol_var_dict, precision_bound)

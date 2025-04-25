@@ -15,9 +15,8 @@ def add_invariant(g : SemiAlgebraicDict, Z : list[sym.Symbol], variables : list[
         sum_probs - 1,
     ]
     g_inv = poly_list(g_inv, variables)
+    for k in g: g[k] += g_inv
     g[INVARIANT] = g_inv
-    g[UNSAFE] += g_inv
-    g[INIT] += g_inv
     return g
 
 def run_example(file_tag : str, 

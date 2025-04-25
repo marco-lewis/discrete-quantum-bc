@@ -25,6 +25,8 @@ DIFF = 'diff'
 LOC = 'loc'
 INDUCTIVE = 'inductive'
 CHANGE = 'change'
+REACHINIT = 'reachinit'
+REACH = 'reach'
 
 TIME_SP = 'Setup + Postprocessing'
 TIME_PICOS = 'PICOS'
