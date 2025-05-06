@@ -10,29 +10,20 @@ n = 1
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(2**n)]
 variables = Z + [z.conjugate() for z in Z]
 
-
-unitary = n_gate(Xgate, n)
-circuit = [unitary] * 6
+H = -1j * Hgate
+circuit = [H]
 g_init = [
     Z[0] * sym.conjugate(Z[0]) - 0.9,
     1j*(Z[0] - sym.conjugate(Z[0])),
     -1j*(Z[0] - sym.conjugate(Z[0])),
     ]
+s = 1e-5
 g_reach = [
-    Z[1] * sym.conjugate(Z[1]) - 0.9,
+    Z[0] * sym.conjugate(Z[0]) - (0.5 - s),
+    Z[1] * sym.conjugate(Z[1]) - (0.5 - s),
+    (0.5 + s) - Z[0] * sym.conjugate(Z[0]),
+    (0.5 + s) - Z[1] * sym.conjugate(Z[1]),
 ]
-
-if n == 2:
-    unitary = CXgate
-    circuit = [unitary] * 6
-    g_init = [
-        Z[2] * sym.conjugate(Z[2]) - 0.9,
-        1j*(Z[0] - sym.conjugate(Z[0])),
-        -1j*(Z[0] - sym.conjugate(Z[0])),
-        ]
-    g_reach = [
-        Z[3] * sym.conjugate(Z[3]) - 0.9,
-    ]
 
 g_reach = [-g for g in g_reach]
 g = {}
@@ -53,5 +44,5 @@ docker = True
 barrier_certificate, times = find_barrier_certificate(
             circuit, g, Z, barrier_degree=barrier_degree, eps=epsilon,
             gamma=gamma, k=k, verbose=verbose, log_level=log_level,
-            solver=solver, smt_timeout=smt_timeout, isreach=1, docker=docker,
+            solver=solver, smt_timeout=smt_timeout, isreach=2, docker=docker,
             )

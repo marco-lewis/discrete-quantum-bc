@@ -25,6 +25,7 @@ DIFF = 'diff'
 LOC = 'loc'
 INDUCTIVE = 'inductive'
 CHANGE = 'change'
+REACHCONT = 'reachcont'
 REACHINIT = 'reachinit'
 REACH = 'reach'
 

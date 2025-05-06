@@ -1,7 +1,7 @@
 from src.check import check_barrier
 from src.log_settings import LoggerWriter
 from src.typings import Barrier, BarrierCertificate, Chunk, Circuit, Idx, LamList, SemiAlgebraicDict, Timings, Unitaries
-from src.utils import INVARIANT, INIT, UNSAFE, DIFF, CHANGE, INDUCTIVE, REACH, REACHINIT, TIME_PICOS, TIME_SP, TIME_VERIF
+from src.utils import INVARIANT, INIT, UNSAFE, DIFF, CHANGE, INDUCTIVE, REACH, REACHINIT, REACHCONT, TIME_PICOS, TIME_SP, TIME_VERIF
 from src.utils import calculate_d, convert_exprs, convert_exprs_of_matrix, create_polynomial, flatten, format_time, generate_variables, row_msg
 
 from collections import defaultdict
@@ -73,12 +73,14 @@ def find_barrier_certificate(circuit : Circuit,
         (INDUCTIVE, lambda B, Bk, fk, lam, g: sym.poly(-Bk.as_expr().subs(zip(Z, np.dot(fk, Z)), simultaneous=True) + B - np.dot(lam, g[INVARIANT]), variables)),
         (REACHINIT, lambda B, lam, g: sym.poly(-B - np.dot(lam, g[REACHINIT]) + eps, variables)),
         (REACH, lambda B, f, lam, g: sym.poly(-B.as_expr().subs(zip(Z, np.dot(f, Z)), simultaneous=True) + B - np.dot(lam, g[REACH]) - gamma, variables)),
+        (REACHCONT, lambda B, f, lam, g: sym.poly(-np.dot([B.diff(z) for z in Z], np.dot(f,Z)) - np.dot([B.diff(z.conjugate()) for z in Z], np.dot(f, [z.conjugate() for z in Z])) - np.dot(lam, g[REACH]) - gamma, variables)),
         ])
     logger.info("Making HSOS polynomials...")
     if isreach:
         sym_polys = {}
         sym_polys[REACHINIT] = [sym_poly_eq[REACHINIT](barriers[0], lams[REACHINIT][0], g)]
-        sym_polys[REACH] = [sym_poly_eq[REACH](barriers[j], unitaries[j], lams[REACH][j], g) for j in range(len(unitaries))]
+        if isreach == 1: sym_polys[REACH] = [sym_poly_eq[REACH](barriers[j], unitaries[j], lams[REACH][j], g) for j in range(len(unitaries))]
+        if isreach == 2: sym_polys[REACHCONT] = [sym_poly_eq[REACHCONT](barriers[j], unitaries[j], lams[REACH][j], g) for j in range(len(unitaries))]
     else: sym_polys = make_sym_polys(barriers, lams, g, unitaries, idx_pairs, chunks, k, sym_poly_eq)
     logger.info("HSOS polynomials made.")
 
