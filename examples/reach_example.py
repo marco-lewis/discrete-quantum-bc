@@ -34,10 +34,10 @@ if n == 2:
         Z[3] * sym.conjugate(Z[3]) - 0.9,
     ]
 
-g_reach = [-g for g in g_reach]
+g_reach_complement = [-g for g in g_reach]
 g = {}
 g[REACHINIT] = poly_list(g_init, variables)
-g[REACH] = poly_list(g_reach, variables)
+g[REACH] = poly_list(g_reach_complement, variables)
 g = add_invariant(g, Z, variables, n)
 
 barrier_degree=2

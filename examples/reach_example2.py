@@ -17,18 +17,17 @@ g_init = [
     1j*(Z[0] - sym.conjugate(Z[0])),
     -1j*(Z[0] - sym.conjugate(Z[0])),
     ]
-s = 1e-5
-g_reach = [
-    Z[0] * sym.conjugate(Z[0]) - (0.5 - s),
-    Z[1] * sym.conjugate(Z[1]) - (0.5 - s),
-    (0.5 + s) - Z[0] * sym.conjugate(Z[0]),
-    (0.5 + s) - Z[1] * sym.conjugate(Z[1]),
-]
 
-g_reach = [-g for g in g_reach]
+s = 0.1
+g_reach_complement = [
+    (Z[0] * sym.conjugate(Z[0]) - (0.5 - s)) * (Z[0] * sym.conjugate(Z[0]) - (0.5 + s)),
+    ((0.5 - s) - Z[0] * sym.conjugate(Z[0])) * ((0.5 + s) - Z[0] * sym.conjugate(Z[0])),
+    # (Z[1] * sym.conjugate(Z[1]) - (0.5 - s)) * (Z[1] * sym.conjugate(Z[1]) - (0.5 + s)),
+    # ((0.5 - s) - Z[1] * sym.conjugate(Z[1])) * ((0.5 + s) - Z[1] * sym.conjugate(Z[1])),
+]
 g = {}
 g[REACHINIT] = poly_list(g_init, variables)
-g[REACH] = poly_list(g_reach, variables)
+g[REACH] = poly_list(g_reach_complement, variables)
 g = add_invariant(g, Z, variables, n)
 
 barrier_degree=2
