@@ -75,7 +75,7 @@ parser.add_argument("--barrier-degree", type=int, default=2, help="Maximum degre
 parser.add_argument("--target", "-tgt", type=int, default=0, help="Target qubit for semialgebraic sets.")
 parser.add_argument("--mark", type=int, default=0, help="Marked qubit value for Grover example.")
 parser.add_argument("--verbose", "-v", action='store_true', help="Set verbosity.")
-parser.add_argument("--log-level", type=str, default='INFO', choices=["DEBUG,INFO,WARN,ERROR,CRITICAL"], help="Display level of logging.")
+parser.add_argument("--log-level", type=str, default='INFO', choices=["DEBUG","INFO","WARN","ERROR","CRITICAL"], help="Display level of logging.")
 parser.add_argument("--check", action='store_true', help="Set to check generated barrier with SMT solvers.")
 parser.add_argument("--smt-timeout", type=int, default=300, help="Set timeout for SMT solvers.")
 parser.add_argument("--docker", action='store_true', help="Use a docker instance of dreal.")
