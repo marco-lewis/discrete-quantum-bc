@@ -79,8 +79,13 @@ def find_barrier_certificate(circuit : Circuit,
     if isreach:
         sym_polys = {}
         sym_polys[REACHINIT] = [sym_poly_eq[REACHINIT](barriers[0], lams[REACHINIT][0], g)]
-        if isreach == 1: sym_polys[REACH] = [sym_poly_eq[REACH](barriers[j], unitaries[j], lams[REACH][j], g) for j in range(len(unitaries))]
-        if isreach == 2: sym_polys[REACHCONT] = [sym_poly_eq[REACHCONT](barriers[j], unitaries[j], lams[REACH][j], g) for j in range(len(unitaries))]
+        if isreach == 1: reach_key = REACH
+        elif isreach == 2: reach_key = REACHCONT
+        else:
+            logger.error(f"Invalid value for isreach variable ({isreach})")
+            times[TIME_SP] = time.time() - times[TIME_SP]
+            return 0, times
+        sym_polys[reach_key] = [sym_poly_eq[reach_key](barriers[j], unitaries[j], lams[REACH][j], g) for j in range(len(unitaries))]
     else: sym_polys = make_sym_polys(barriers, lams, g, unitaries, idx_pairs, chunks, k, sym_poly_eq)
     logger.info("HSOS polynomials made.")
 
