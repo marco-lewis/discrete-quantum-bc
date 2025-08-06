@@ -325,7 +325,9 @@ def debug_print_matrices(cvx_matrices : list[picos.HermitianVariable]):
         logger.debug(m.name)
         logger.debug(m)
 
-def get_barrier_certificate_values(barriers, symbol_values, unitaries) -> list[tuple[np.ndarray, sym.Poly]]:
+def get_barrier_certificate_values(barriers : list[Barrier],
+                                   symbol_values : dict[sym.Symbol, complex],
+                                   unitaries : Unitaries) -> list[tuple[np.ndarray, sym.Poly]]:
     barriers = [barrier.subs(symbol_values) for barrier in barriers]
     return list(zip(unitaries, barriers))
 
