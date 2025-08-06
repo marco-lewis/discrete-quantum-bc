@@ -90,7 +90,7 @@ def find_barrier_certificate(circuit : Circuit,
     barrier_coeffs = get_barrier_coeffs(barriers)
     symbol_var_dict = make_symbol_var_dict(lam_coeffs, barrier_coeffs)
     logger.info("Symbol to variable dictionary made.")
-    logger.debug(symbol_var_dict)
+    for key in symbol_var_dict: logger.debug(f"{key}: {symbol_var_dict[key]}")
 
     # 3. Get matrix polynomial and constraints for semidefinite format
     cvx_matrices, cvx_constraints = get_cvx_format(lams, symbol_var_dict, variables, sym_polys)
@@ -282,7 +282,7 @@ def get_cvx_format(lams : dict[str, LamList], symbol_var_dict : dict[sym.Symbol,
     logger.info("Number of matrices: " + str(len(cvx_matrices)))
     for M in cvx_matrices: logger.debug(M.name + ": " + str(M.shape))
     logger.info("Number of constraitns: " + str(len(cvx_constraints)))
-    logger.debug(cvx_constraints)
+    for c in cvx_constraints: logger.debug(c)
     return cvx_matrices, cvx_constraints
 
 def run_picos(cvx_constraints : list[picos.constraints.Constraint], solver : str, verbose : int) -> tuple[int, float]:
@@ -290,7 +290,7 @@ def run_picos(cvx_constraints : list[picos.constraints.Constraint], solver : str
     prob.minimize = picos.Constant(0)
     for constraint in cvx_constraints: prob.add_constraint(constraint)
 
-    logger.info("Solving problem...")
+    logger.info(f"Solving problem... (using {solver})")
     try:
         sys.stdout = LoggerWriter(picos_logger.info)
         sys.stderr = LoggerWriter(picos_logger.error)
