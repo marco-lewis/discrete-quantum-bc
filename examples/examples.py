@@ -4,6 +4,8 @@ from src.utils import *
 import numpy as np
 import sympy as sym
 
+# Start close to |target> (with amplitude of |0> being real)
+# Avoid being close to any other state
 def Z_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0):
     file_tag = f"zgate{n}_k{k}_tgt{target}"
 
@@ -25,6 +27,8 @@ def Z_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, targ
     g[INIT] = g_init
     return file_tag, circuit, g
 
+# Start near equal superposition state (every state prob = 1/N)
+# Avoid |target> having higher probability than everything (>1/N + error)
 def X_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0):
     N = 2**n
     file_tag = f"xgate{n}_k{k}_tgt{target}"
@@ -46,6 +50,8 @@ def X_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, targ
 
 # target = 0, 1 good for n=1
 # n=2, experiment = 0 good; = 1, 2, 3 bad
+# Start near |target>
+# Avoid middle region for target (target is either extremely likely or unlikely)
 def XZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0):
     file_tag = f"xz{n}_k{k}_tgt{target}"
 
@@ -64,6 +70,8 @@ def XZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, tar
     g[INIT] = g_init
     return file_tag, circuit, g
 
+# Start near |ctrl_mark>|0>
+# Avoid entering |1 - ctrl_mark>|phi>
 def CX_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1, ctrl_mark=0):
     if not(n == 2): raise Exception('Number of qubits needs to be even.')
     N = 2**n
@@ -83,6 +91,8 @@ def CX_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1, ctr
     g[INIT] = g_init
     return file_tag, circuit, g
 
+# Start near |11>
+# Avoid other basis states
 def CZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
     if not(n == 2): raise Exception('Number of qubits needs to be even.')
     N = 2**n
@@ -101,6 +111,9 @@ def CZ_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
     g[INIT] = g_init
     return file_tag, circuit, g
 
+
+# Start near |11>
+# Avoid other |0>|phi> states
 def CH_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
     if not(n == 2): raise Exception('Number of qubits needs to be even.')
     N = 2**n
@@ -119,6 +132,8 @@ def CH_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
     g[INIT] = g_init
     return file_tag, circuit, g
 
+# Start near |111>
+# Avoid outside outside |11>|phi>
 def CCX_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
     if not(n == 3): raise Exception('Number of qubits (n) needs to be 3.')
     N = 2**n
@@ -137,6 +152,8 @@ def CCX_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=2, k=1):
     g[INIT] = g_init
     return file_tag, circuit, g
 
+# Start at equal superposition of basis states
+# Avoid near |target>, where target != mark
 def Grover_simple_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1):
     N = 2**n
     file_tag = f"grover_simple{n}_k{k}_m{mark}_tgt{target}"
@@ -167,6 +184,8 @@ def Grover_simple_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=
     g[INIT] = g_init
     return file_tag, circuit, g
 
+# Start near equal superposition of basis states
+# Avoid near |target> != |mark>
 def Grover_dual_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1):
     N = 2**n
     file_tag = f"grover_dual{n}_k{k}_m{mark}_tgt{target}"
@@ -198,6 +217,8 @@ def Grover_dual_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol
     g[INIT] = g_init
     return file_tag, circuit, g
 
+# Start near equal superposition of basis states (or oracle applied to that)
+# Avoid near |target> != |mark> applying DO or OD
 def Grover_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=1, k=1, target=0, mark=1, odd=0):
     N = 2**n
     odd_str = "odd" if odd else "even"
@@ -223,7 +244,7 @@ def Grover_unmark_example(Z : list[sym.Symbol], variables : list[sym.Symbol], n=
     g_init += [1/N + err - (z * sym.conjugate(z)) for z in Z]
     g_init += [(z - sym.conjugate(z))/2j + np.sqrt(err) for z in Z]
     g_init += [np.sqrt(err) - (z - sym.conjugate(z))/2j for z in Z]
-    if odd: g_init = [g.subs(zip(Z, np.dot(oracle, Z))) for g in g_init]
+    if odd: g_init = [g.subs(zip(Z, np.dot(oracle, Z)), simultaneous = True) for g in g_init]
     g_init = poly_list(g_init, variables)
 
     g = {}
