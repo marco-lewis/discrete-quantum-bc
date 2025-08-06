@@ -10,7 +10,8 @@ n = 1
 Z = [sym.Symbol('z' + str(i), complex=True) for i in range(2**n)]
 variables = Z + [z.conjugate() for z in Z]
 
-
+# Reachable with X gate
+# Start near 0, reach 1
 unitary = n_gate(Xgate, n)
 circuit = [unitary] * 6
 g_init = [
@@ -37,7 +38,7 @@ if n == 2:
 g_reach_complement = [-g for g in g_reach]
 g = {}
 g[REACHINIT] = poly_list(g_init, variables)
-g[REACH] = poly_list(g_reach_complement, variables)
+g[REACH] = poly_list(g_reach, variables)
 g = add_invariant(g, Z, variables, n)
 
 barrier_degree=2
