@@ -59,9 +59,9 @@ def check_barrier(barrier_certificate : BarrierCertificate,
 def run_checks(z3_barriers, z3_diffs, z3_changes, z3_k_diffs, z3_constraints, k=1, eps=0.01, gamma=0.01, timeout=300, docker=False):
     d = calculate_d(k, eps, gamma)
     constraint_val = Complex('constraint_val')
-
+    def run(conds): return run_solver(conds, tool=DREAL, timeout=timeout, docker=docker)
+    
     logger.info("Check " + INIT)
-    run = lambda conds: run_solver(conds, tool=DREAL, timeout=timeout, docker=docker)
     run([z3.And(z3_constraints[INIT]), constraint_val == z3_barriers[0][1], constraint_val.r > 0])
 
     for unitary, z3_barrier in z3_barriers:
